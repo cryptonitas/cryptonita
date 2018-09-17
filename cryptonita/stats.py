@@ -60,6 +60,6 @@ class SequenceStatsMixin:
         elems, _ = zip(*self.freq().most_common(n))
         return elems
 
-    def entropy(self):
+    def entropy(self, qk=None, base=None):
         freq = list(self.freq().values())
-        return entropy(freq)
+        return entropy(freq, qk, base)

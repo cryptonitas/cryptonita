@@ -70,8 +70,7 @@ def ngram_entropy_score(m, N=1):
         logarithm (base e).
 
     '''
-    freq = list(m.ngrams(N).freq().values())
-    return stats.entropy(freq)
+    return m.ngrams(N).entropy()
 
 def yes_no_score(m, yes_prob=0.5):
     r'''
