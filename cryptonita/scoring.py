@@ -59,7 +59,7 @@ def ngram_entropy_score(m, N=1):
         It is quite useful to distinguish short random sequences from not-much
         random sequences.
 
-        It is related with index_of_coincidence, but in the practice, entropy
+        It is related with icoincidences, but in the practice, entropy
         is slower and it is less discriminant.
 
         Nota bene: the entropy is calculated as:
@@ -122,7 +122,7 @@ def yes_no_score(m, yes_prob=0.5):
 
     return 1 - stats.binom_test(sucessess, n=bits)
 
-def index_of_coincidence(m, N=1, mode='ngrams'):
+def icoincidences(m, N=1, mode='ngrams'):
     r'''
         Take the string of bytes <m> and see it as a sequence of ngrams
         of length <N> if <mode> is 'ngrams' or see it as a sequence of
@@ -138,7 +138,7 @@ def index_of_coincidence(m, N=1, mode='ngrams'):
         >>> ciphertexts = open('data/4.txt', 'rb').read().strip().split(b'\n')
         >>> ciphertexts = [B(c, encoding=16) for c in ciphertexts]
 
-        >>> scores_and_indexes = [(index_of_coincidence(c), i) \
+        >>> scores_and_indexes = [(icoincidences(c), i) \
         ...                         for i, c in enumerate(ciphertexts)]
 
         Remember, higher values are better
@@ -279,7 +279,7 @@ def key_length_by_ic(length, ciphertext, N=1):
 
         and compute the IC.
         '''
-    return index_of_coincidence(B(ciphertext[::length]), N)
+    return icoincidences(B(ciphertext[::length]), N)
 
 
 # (b - a + 1)**2 - 1 / 12  = (b==1, a==0) -> 3/12
