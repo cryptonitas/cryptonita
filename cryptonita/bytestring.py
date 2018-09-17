@@ -169,6 +169,18 @@ class ByteString(bytes, SequenceStatsMixin):
             >>> s.encode(base=16)
             '0102'
 
+        This also support some basic statistics:
+
+            >>> s = B('ABA')
+            >>> s.freq()
+            Counter({65: 2, 66: 1})
+
+            >>> s.most_common(n=1)
+            (65,)
+
+            >>> s.entropy()
+            0.6365141682948<...>
+
         See more information in the documentation of each method.
 
         '''
@@ -372,12 +384,15 @@ class Ngrams(SequenceStatsMixin):
 
         This also support some basic statistics:
 
-            >>> ngrams = B('ABABCABABC').ngrams(2)
+            >>> ngrams = B('ABABABC').ngrams(2)
             >>> ngrams.freq()
-            Counter({b'AB': 4, b'BA': 2, b'BC': 2, b'CA': 1})
+            Counter({b'AB': 3, b'BA': 2, b'BC': 1})
 
             >>> ngrams.most_common(n=2)
             ('AB', 'BA')
+
+            >>> ngrams.entropy()
+            1.0114042647073<...>
 
     '''
     __slots__ = ('_raw', '_n')
@@ -453,6 +468,9 @@ class Nblocks(SequenceStatsMixin):
             >>> nblocks.most_common(n=2)
             ('AB', 'BA')
 
+            >>> nblocks.entropy()
+            1.0114042647073<...>
+
     '''
     def __init__(self, raw, n):
         self._raw = raw
@@ -504,4 +522,6 @@ class InfiniteStream(bytes):
 _number_of_1s_in_byte = [0] * 256
 for i in range(len(_number_of_1s_in_byte)):
     _number_of_1s_in_byte[i] = (i & 1) + _number_of_1s_in_byte[i >> 1]
+
+_number_of_1s_in_byte = tuple(_number_of_1s_in_byte)
 
