@@ -15,31 +15,6 @@ from cryptonita.bytestring import B, are_bytes_or_fail
 
 '''
 
-
-def hamming_distance(m1, m2):
-    r'''
-        Return the Hamming distance between <m1> and <m2>.
-
-        >>> m1 = B('this is a test')
-        >>> m2 = B('wokka wokka!!!')
-
-        >>> hamming_distance(m1, m2)
-        37
-
-        The Hamming (or edit) distance is the count of how many bits
-        these two string differ. It is defined for strings of the same
-        lengths, so the following will fail:
-
-        >>> hamming_distance(m1, m1 + m1)
-        Traceback (most recent call last):
-        <...>
-        ValueError: Mismatch lengths. Left string has 14 bytes but right string has 28.
-
-    '''
-
-    x = m1 ^ m2
-    return x.count_1s()
-
 def all_ascii_printable(m):
     ''' Score with 1 if the message has only ASCII printable characters.
 
@@ -292,7 +267,7 @@ def key_length_by_hamming_distance(length, ciphertext):
     if len(ciphertext) < l * 2:
         raise ValueError("The ciphertext is too short to guess the key's length and it is impossible to see if a key of %i bytes could be possible." % l)
 
-    distance = hamming_distance(B(ciphertext[:l]), B(ciphertext[l:l*2]))
+    distance = B(ciphertext[:l]).hamming_distance(B(ciphertext[l:l*2]))
     return 1 - (distance / (l*8))
 
 

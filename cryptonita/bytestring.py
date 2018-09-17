@@ -338,6 +338,29 @@ class ByteString(bytes, SequenceStatsMixin):
         else:
             raise ValueError("Unknow padding scheme '%s'" % scheme)
 
+    def hamming_distance(self, m2):
+        r'''
+            Return the Hamming distance between self and <m2>.
+
+            >>> m1 = B('this is a test')
+            >>> m2 = B('wokka wokka!!!')
+
+            >>> m1.hamming_distance(m2)
+            37
+
+            The Hamming (or edit) distance is the count of how many bits
+            these two string differ. It is defined for strings of the same
+            lengths, so the following will fail:
+
+            >>> m1.hamming_distance(m1 + m1)
+            Traceback (most recent call last):
+            <...>
+            ValueError: Mismatch lengths. Left string has 14 bytes but right string has 28.
+
+        '''
+
+        x = self ^ m2
+        return x.count_1s()
 
 
 class Ngrams(SequenceStatsMixin):
