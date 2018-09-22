@@ -219,6 +219,21 @@ def decrypt_ecb_tail(alignment, block_size, encryption_oracle, limit=None):
     return B(b''.join(decrypted_bytes))
 
 def guess_key_length(ciphertext, length_space, score_func, min_score=0.5, **score_func_params):
+    ''' Guess the length of the key that was used to cipher
+        the given ciphertext.
+
+        The possible lengths will be determined by <length_space>:
+         - if it is a int, assume a range from 1 to <length_space>
+         - otherwise, <length_space> needs to be an iterable of possible lengths
+
+        For each possible length, score each one using <score_func> and
+        drop anyone with a score of <min_score> or less.
+
+        Extra parameters can be passed to the <score_func> using
+        <score_func_params>.
+
+        Return a FuzzySet with the lengths guessed.
+        '''
     assert 0.0 <= min_score <= 1.0
     are_bytes_or_fail(ciphertext, 'ciphertext')
 
