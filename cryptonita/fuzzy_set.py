@@ -94,6 +94,9 @@ class FuzzySet(dict, collections.Set):
                 raise ValueError("The membership of %s is %0.4f but it must be a value between 0 and 1."
                                         % (repr(elem), prob))
 
+    def copy(self):
+        return FuzzySet(self, min_membership=self.min_membership)
+
     def most_likely(self, n=None):
         '''
             >>> g = FuzzySet(['a', 'b', 'c'], [0.9, 0.8, 0.7])
