@@ -12,7 +12,7 @@ all:
 deps:
 	pip install -e .
 	pip install byexample
-	pip install wheel
+	pip install wheel twine
 
 test: clean_test
 	@byexample -l python cryptonita/*.py
@@ -20,7 +20,7 @@ test: clean_test
 
 dist:
 	rm -Rf dist/ build/ *.egg-info
-	python setup.py sdist bdist_wheel --universal
+	python setup.py sdist bdist_wheel
 	rm -Rf build/ *.egg-info
 
 upload: dist
