@@ -26,7 +26,7 @@ setup(
     description=__doc__,
     long_description=long_description,
 
-    url=_url,
+    #url=_url,
 
     # Author details
     author=_author,
