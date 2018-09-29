@@ -181,6 +181,9 @@ class ByteString(bytes, SequenceStatsMixin):
             >>> s.entropy()
             0.6365141682948<...>
 
+            >>> list(s.iduplicates(distance=1, idx_of='first'))
+            [0]
+
         See more information in the documentation of each method.
 
         '''

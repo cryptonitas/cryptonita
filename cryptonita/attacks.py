@@ -189,7 +189,8 @@ def decrypt_ecb_tail(alignment, block_size, encryption_oracle, limit=None):
             tmp = align_test_block + test_block + b + align_target_block
             c = encryption_oracle(tmp)
 
-            if scoring.count_duplicated_blocks(c, block_size, distance):
+            # TODO i'm not resistent to possible false positive!
+            if c.nblocks(block_size).has_duplicates(distance):
                 # two block had collided to a <distance> blocks of distance
                 # that means that out guess 'b' matched with the unknow
                 # bytes '?' effectively decrypting it

@@ -1,4 +1,5 @@
 import collections
+import itertools as itools
 
 import math
 def _py_entropy(pk, qk=None, base=None):
@@ -63,3 +64,66 @@ class SequenceStatsMixin:
     def entropy(self, qk=None, base=None):
         freq = list(self.freq().values())
         return entropy(freq, qk, base)
+
+    def iduplicates(self, distance, idx_of='second'):
+        r'''Return the index of each duplicates or repeated item.
+
+            An item is considered duplicated if another item is
+            the same *and* it is <distance> items of distance.
+
+            <distance> equal to 0 means "two consecutive items"
+
+                >>> from cryptonita.bytestring import B
+
+                >>> blocks = B('AABBAACCCCDDAADDAA').nblocks(2)
+                >>> list(blocks)
+                ['AA', 'BB', 'AA', 'CC', 'CC', 'DD', 'AA', 'DD', 'AA']
+
+                >>> # the CCs
+                >>> list(blocks.iduplicates(distance=0))
+                [4]
+
+                >>> # the first 2 and last 2 AAs and the DDs
+                >>> list(blocks.iduplicates(distance=1))
+                [2, 7, 8]
+
+                >>> # the first 2 AAs with the last 2 AAs
+                >>> list(blocks.iduplicates(distance=5))
+                [6, 8]
+
+            By default returns the indexes of the "second" item, the
+            duplicated.
+
+            But it is possible to return the index of the first:
+
+                >>> list(blocks.iduplicates(distance=5, idx_of='first'))
+                [0, 2]
+
+            Or even of both (notice how the indexes are mixed):
+
+                >>> list(blocks.iduplicates(distance=5, idx_of='both'))
+                [0, 6, 2, 8]
+
+        '''
+        assert idx_of in ('both', 'first', 'second')
+
+        # consecutive items if distance is 0
+        # 1 item between if distance is 1, ...
+        left, right = itools.tee(self)
+        right = itools.islice(right, 1+distance, None)
+
+        # ``left`` is longer than ``right`` but it is ok: we want to drop
+        # the last items from ``left`` and zip() will do that for us
+        pairs = zip(left, right)
+
+        idx = 0
+        for a, b in pairs:
+            if a == b:
+                if idx_of in ('first', 'both'):
+                    yield idx
+                if idx_of in ('second', 'both'):
+                    yield idx+distance+1
+            idx += 1
+
+    def has_duplicates(self, distance):
+        return next(self.iduplicates(distance), None) != None
