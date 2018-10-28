@@ -92,7 +92,7 @@ def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1):
 
         >>> proposed_keys = freq_attack(ciphertext, most_common_plain_ngrams)
 
-        >>> proposed_keys       # byexample: +norm-ws
+        >>> proposed_keys       # byexample: +norm-ws +geometry=24x400
         {<...>'X' -> 1.000<...>}
 
 
