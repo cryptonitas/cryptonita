@@ -122,14 +122,17 @@ def yes_no_score(m, yes_prob=0.5):
 
     return 1 - stats.binom_test(sucessess, n=bits)
 
-def icoincidences(m, N=1, mode='ngrams'):
+def icoincidences(seq, N=1, mode='ngrams'):
     r'''
-        Take the string of bytes <m> and see it as a sequence of ngrams
-        of length <N> if <mode> is 'ngrams' or see it as a sequence of
-        non-overlaping blocks of length <N> if <mode> is 'nblocks'.
+        Take the sequence <seq> that can be:
+         - a ByteString
+         - a Nblocks view
+         - a Ngrams view
+         -  any other object that support SequenceStatsMixin.freq method.
 
-        Then, see how many ngrams are repeated: count the coincidences; higher
-        values means that the <m> sequence is less random. [1]
+        For the given sequence see how many items are repeated:
+        count the coincidences; higher
+        values means that the <seq> is less random. [1]
 
         For example, in the given file are 327 random strings. One of them
         is actually a message encrypted by doing a xor with a key of just 1 byte.
@@ -158,71 +161,14 @@ def icoincidences(m, N=1, mode='ngrams'):
         [1] Index of coincidence: https://en.wikipedia.org/wiki/Index_of_coincidence
 
     '''
-    if mode == 'ngrams':
-        seq = m.ngrams(N)
-    elif mode == 'nblocks':
-        seq = m.nblocks(N)
-    else:
-        raise ValueError("Unknow mode %s" % mode)
-
     freqs = seq.freq().values()
-    text_len = len(m) - N + 1
     # TODO talk about why the c factor should not be used:
     # - it makes the final number a non-prob value (greather than 1)
     # - it is just a scalar factor to separate one value from the other but
     #   this is a human invention, the machine has no problem to see the
     #   difference of 0.0001 and 0.000011.
-    return sum(f * (f-1) for f in freqs) / (text_len * (text_len - 1))
+    return sum(f * (f-1) for f in freqs) / (len(seq) * (len(seq) - 1))
 
-
-def count_duplicated_blocks(s, block_size, distance=None, indexes=False):
-    r'''Count how many blocks are repeated or duplicated.
-
-            >>> s = B('AABBAACCCCDDAADDAA')
-            >>> count_duplicated_blocks(s, block_size=2)
-            5
-
-        If the <distance> parameter is given, a block is considered
-        duplicated if another block is the same *and* it is <distance>
-        blocks of distance.
-
-        <distance> equal to 0 means "two consecutive blocks"
-
-            >>> # the CCs
-            >>> count_duplicated_blocks(s, block_size=2, distance=0)
-            1
-
-            >>> # the first 2 and last 2 AAs and the DDs
-            >>> count_duplicated_blocks(s, block_size=2, distance=1)
-            3
-
-            >>> # the first 2 AAs with the last 2 AAs
-            >>> count_duplicated_blocks(s, block_size=2, distance=5)
-            2
-
-    '''
-    # TODO i'm not resistent to possible false positive!
-    blocks = list(s.nblocks(block_size))
-
-    if distance is not None:
-        # consecutive blocks if distance is 0
-        # 1 block between if distance is 1, ...
-        pairs = zip(blocks[:-1-distance], blocks[1+distance:])
-
-        count = 0
-        for a, b in pairs:
-            if a == b:
-                count += 1
-
-        return count
-
-    else:
-        # count any duplicated block, no matter how far is it from
-        # its copy
-        before = len(blocks)
-        after  = len(set(blocks))
-
-        return before - after
 
 def key_length_by_hamming_distance(length, ciphertext):
     ''' Score how much likely is <length> to be the length of the key
