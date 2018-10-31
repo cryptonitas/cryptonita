@@ -331,10 +331,9 @@ class ByteString(bytes, SequenceStatsMixin):
         '''
         if scheme == 'pkcs#7':
             n = self[-1]
-            assert n <= 64
 
-            if self[-n:] != B(n) * n:
-                raise ValueError("Bad padding '%s' with last byte %x" %
+            if n > 64 or self[-n:] != B(n) * n:
+                raise ValueError("Bad padding '%s' with last byte %#x" %
                                         (scheme, n))
 
             return self[:-n]

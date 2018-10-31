@@ -247,3 +247,39 @@ def guess_key_length(ciphertext, length_space, score_func, min_score=0.5, **scor
                         min_membership=min_score)
     return lengths
 
+def decrypt_cbc_tail_block(cblocks, bsize, oracle):
+    x = B(range(bsize, 0, -1)) ^ cblocks[-2]
+    x = list(x)
+    for i in range(bsize-1, -1, -1):
+        prefix = cblocks[-2][:i]
+        padn = B(bsize-i)
+        posfix = B(padn * (bsize-i-1)) ^ B(x[i+1:])
+
+        for n in range(256):
+            if cblocks[-2][i] == n:
+                continue
+
+            forged_cblock = prefix + B(n) + posfix
+            forged_ciphertext = B('').join(cblocks[:-2] + [forged_cblock] + [cblocks[-1]])
+
+            good = oracle(forged_ciphertext)
+            if good:
+                x[i] = (padn ^ B(n))[0]
+                break
+    return B(x) ^ cblocks[-2]
+
+
+def decrypt_cbc_padding_attack(ciphertext, bsize, oracle, iv=None):
+    p = []
+    if iv != None:
+        ciphertext = iv + ciphertext
+
+    cblocks = list(ciphertext.nblocks(bsize))
+
+    while len(cblocks) > 1:
+        p.append(decrypt_cbc_tail_block(cblocks, bsize, oracle))
+        del cblocks[-1]
+
+    p.reverse()
+    return B('').join(p)
+
