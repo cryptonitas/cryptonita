@@ -6,11 +6,12 @@ from collections import Counter
 import scipy.stats as stats
 from langdetect import detect_langs
 
-from cryptonita.bytestring import B, are_bytes_or_fail
+from cryptonita import B
+from cryptonita.helpers import are_bytes_or_fail
 
 '''
 >>> # Convenient definitions
->>> from cryptonita.bytestring import B
+>>> from cryptonita import B
 >>> from cryptonita.scoring import *
 
 '''

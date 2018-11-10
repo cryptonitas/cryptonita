@@ -1,12 +1,13 @@
 import cryptonita.scoring as scoring
 from cryptonita.fuzzy_set import FuzzySet
-from cryptonita.bytestring import B, are_bytes_or_fail
+from cryptonita import B
+from cryptonita.helpers import are_bytes_or_fail
 
 from itertools import product
 
 '''
 >>> # Convenient definitions
->>> from cryptonita.bytestring import B
+>>> from cryptonita import B
 >>> from cryptonita.attacks import brute_force, freq_attack  # byexample: +timeout=10
 
 '''
