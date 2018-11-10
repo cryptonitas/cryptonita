@@ -31,7 +31,6 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
     def __repr__(self):
         return super().__repr__()[1:]
 
-    def join(self, *others):
-        raise NotImplementedError("Not yet")
-        return B(bytes.join(self, *others))
+    def tobytes(self):
+        return self
 

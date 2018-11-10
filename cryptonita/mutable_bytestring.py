@@ -16,3 +16,5 @@ class MutableByteString(MutableSequenceMixin, bytearray):
     def __repr__(self):
         return super().__repr__()[11:-1]
 
+    def tobytes(self):
+        return bytes(self)

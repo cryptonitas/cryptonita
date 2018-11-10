@@ -78,12 +78,6 @@ class SequenceMixin:
                 ('0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A'
                  '282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F')
 
-            Inplace is allowed too:
-
-                >>> a ^= b
-                >>> a == c
-                True
-
         '''
         if not isinstance(other, InfiniteStream):
             are_same_length_or_fail(self, other)
@@ -92,6 +86,9 @@ class SequenceMixin:
 
     def __rxor__(self, other):
         return self ^ other
+
+    def __ixor__(self, other):
+        raise TypeError("You cannot modify a immutable byte string.")
 
     def __add__(self, other):
         ''' Concatenate two byte strings.
@@ -118,7 +115,7 @@ class SequenceMixin:
 
                 >>> a += b
                 Traceback <...>
-                NotImplementedError: You cannot expand an byte string.
+                TypeError: You cannot expand an byte string.
             '''
 
         return type(self)(super().__add__(other))   # TODO double copy?
@@ -127,7 +124,7 @@ class SequenceMixin:
         return type(self)(other) + self   # TODO double copy?
 
     def __iadd__(self, other):
-        raise NotImplementedError("You cannot expand an byte string.")
+        raise TypeError("You cannot expand an byte string.")
 
     def __mul__(self, other):
         ''' Repeat a byte string <n> times.
@@ -156,7 +153,7 @@ class SequenceMixin:
 
                 >>> a *= 2
                 Traceback <...>
-                NotImplementedError: You cannot expand an byte string.
+                TypeError: You cannot expand an byte string.
             '''
         return type(self)(super().__mul__(other))   # TODO double copy?
 
@@ -164,7 +161,7 @@ class SequenceMixin:
         return type(self)(super().__mul__(other))   # TODO double copy?
 
     def __imul__(self, other):
-        raise NotImplementedError("You cannot expand an byte string.")
+        raise TypeError("You cannot expand an byte string.")
 
     def __lshift__(self, other):
         ''' Pushes the <other> string into self shifting all the
@@ -202,6 +199,9 @@ class SequenceMixin:
             return type(self)(other[-len(self):])
         else:
             return self[n:] + other
+
+    def __ilshift__(self, other):
+        raise TypeError("You cannot modify a immutable byte string.")
 
     def encode(self, base):
         r'''
@@ -280,6 +280,9 @@ class SequenceMixin:
 
     def nblocks(self, n):
         return NblocksView(self, n)
+
+    def join(self, *others):
+        return type(self)(super().join(*others))
 
 
 class MutableSequenceMixin(SequenceMixin):
