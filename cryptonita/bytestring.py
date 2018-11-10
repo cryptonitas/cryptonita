@@ -206,6 +206,9 @@ class ByteString(bytearray, SequenceStatsMixin):
 
         return v
 
+    def copy(self):
+        return ByteString(super().copy())   # TODO, double copy?
+
     def ngrams(self, n):
         return Ngrams(self, n)
 
@@ -256,6 +259,12 @@ class ByteString(bytearray, SequenceStatsMixin):
                 ('0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A'
                  '282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F')
 
+            Inplace is allowed too:
+
+                >>> a ^= b
+                >>> a == c
+                True
+
         '''
         if not isinstance(other, InfiniteStream):
             are_same_length_or_fail(self, other)
@@ -264,6 +273,15 @@ class ByteString(bytearray, SequenceStatsMixin):
 
     def __rxor__(self, other):
         return self ^ other
+
+    def __ixor__(self, other):
+        if not isinstance(other, InfiniteStream):
+            are_same_length_or_fail(self, other)
+
+        for idx in range(len(self)):
+            super().__setitem__(idx, super().__getitem__(idx) ^ other[idx])
+
+        return self
 
     def __add__(self, other):
         ''' Concatenate two byte strings.
@@ -301,36 +319,100 @@ class ByteString(bytearray, SequenceStatsMixin):
     def __iadd__(self, other):
         raise NotImplementedError("You cannot expand an byte string.")
 
+    def __mul__(self, other):
+        ''' Repeat a byte string <n> times.
+
+                >>> a = B(b'ABC')
+
+                >>> a * 3
+                'ABCABCABC'
+
+                >>> 2 * a
+                'ABCABC'
+
+                >>> isinstance(a*2, ByteString)
+                True
+
+            A non-positive number is allowed and returns an empty string
+
+                >>> a * 0
+                ''
+
+                >>> a * -1
+                ''
+
+            The repeat cannot be inplace (the string cannot be
+            expended):
+
+                >>> a *= 2
+                Traceback <...>
+                NotImplementedError: You cannot expand an byte string.
+            '''
+        return ByteString(super().__mul__(other))   # TODO double copy?
+
+    def __rmul__(self, other):
+        return ByteString(super().__mul__(other))   # TODO double copy?
+
+    def __imul__(self, other):
+        raise NotImplementedError("You cannot expand an byte string.")
+
     def __lshift__(self, other):
-        r'''
+        ''' Pushes the <other> string into self shifting all the
+            bytes to the left.
+
+            This does not increase or shrink the string length
+            and returns a copy always.
+
                 >>> s = B("ABCD")
 
                 >>> s << B('E')
                 'BCDE'
 
-                >>> s << B('EFG')
+            Other than ByteString can be pushed too:
+
+                >>> s << b'EFG'
                 'DEFG'
+
+            Pushing a much larger string will basically override
+            the original content:
 
                 >>> s << B('EFGHIJK')
                 'HIJK'
 
+            Inplace is allowed too:
+
+                >>> s <<= b'123'
+                >>> s
+                'D123'
+
+            *Beware:* each push or shift involves copying all the byte
+            string which can be really slow.
+
         '''
+        b = self.copy()
+        b <<= other
+        return b
+
+    def __ilshift__(self, other):
         n = len(other)
 
         if n == 0:
-            return B(self)
+            return self
 
         if n > len(self):
-            return B(other[-len(self):])
+            self[:] = other[-len(self):]
+        else:
+            self[:-n] = self[n:]
+            self[-n:] = other
 
-        return self[n:] + other
+        return self
 
     def inf(self):
         return InfiniteStream(self)
 
     def encode(self, base):
         r'''
-            Encode the byte string using a x base (base 16, base 64, ...)
+            Encode the byte string using base <x> (base 16, base 64, ...)
 
                 >>> B('\x01\x02').encode(16)
                 '0102'
@@ -349,27 +431,30 @@ class ByteString(bytearray, SequenceStatsMixin):
         return getattr(base64, 'b%iencode' % base)(self)
 
     def pad(self, n, scheme):
-        r'''Pad the byte string and return a new byte string object.
-
-            How many bytes to pad is controlled by <n>, how we should
-            do it is controlled by <scheme>
-
-            For example:
+        r'''Pad the byte string up to <n> bytes-boundaries using
+            the padding <scheme> and return a new byte string object.
 
                 >>> B('AAAAAAAAAAAA').pad(16, 'pkcs#7')
                 'AAAAAAAAAAAA\x04\x04\x04\x04'
 
+                >>> B('AAAAAAAAAAAABBBB').pad(16, 'pkcs#7')
+                'AAAAAAAAAAAABBBB\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10'
+
+                >>> isinstance(B('A').pad(16, 'pkcs#7'), ByteString)
+                True
+
         '''
         if scheme == 'pkcs#7':
+            assert n > 0
             npad = n - (len(self) % n)
             if npad == 0:
                 npad = n
 
-            padding = bytes([npad]) * npad
+            padding = B(npad) * npad
         else:
             raise ValueError("Unknow padding scheme '%s'" % scheme)
 
-        return as_bytes(self + padding)
+        return self + padding
 
     def unpad(self, scheme):
         r'''
