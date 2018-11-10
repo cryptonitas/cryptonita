@@ -655,7 +655,7 @@ class InfiniteStream(bytes):
         if isinstance(idx, slice):
             raise TypeError("We don't support slicing (yet).")
 
-        return bytes.__getitem__(self, idx % bytes.__len__(self))
+        return super().__getitem__(idx % super().__len__())
 
     def __iter__(self):
         r'''
@@ -670,13 +670,22 @@ class InfiniteStream(bytes):
                 (1, 2, 1, 2)
 
             '''
-        return itertools.cycle(bytes.__iter__(self))
+        it = super().__iter__()
+        while True:
+            try:
+                yield next(it)
+            except StopIteration:
+                it = super().__iter__()
 
     def __repr__(self):
-        return '.. ' + bytes.__repr__(self) + ' ..'
+        '''
+                >>> InfiniteStream(b'ABCD')
+                .. 'ABCD' ..
+        '''
+        return '.. ' + super().__repr__()[1:] + ' ..'
 
     def __len__(self):
-        return math.inf
+        raise TypeError("The length of an endless stream is undefined. You may think it is infinity.")
 
 _number_of_1s_in_byte = [0] * 256
 for i in range(len(_number_of_1s_in_byte)):
