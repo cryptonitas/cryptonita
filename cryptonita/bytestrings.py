@@ -1,9 +1,13 @@
-import base64
-from cryptonita.mixins import SequenceMixin, ByteStatsMixin, SequenceStatsMixin
+from cryptonita.mixins import (
+        SequenceMixin,
+        MutableSequenceMixin,
+        ByteStatsMixin,
+        SequenceStatsMixin
+        )
 
 '''
 >>> from cryptonita import B
->>> from cryptonita.immutable_bytestring import ImmutableByteString
+>>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
 class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, bytes):
@@ -34,3 +38,18 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
     def tobytes(self):
         return self
 
+
+class MutableByteString(MutableSequenceMixin, bytearray):
+    ''' Enhanced version of a mutable byte string.
+
+            >>> s = B(b'ABA', mutable=True)
+            >>> isinstance(s, bytearray) and type(s) != bytearray
+            True
+    '''
+    __slots__ = ()
+
+    def __repr__(self):
+        return super().__repr__()[11:-1]
+
+    def tobytes(self):
+        return bytes(self)

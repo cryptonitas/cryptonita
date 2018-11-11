@@ -1,11 +1,9 @@
 import base64
-from cryptonita.immutable_bytestring import ImmutableByteString
-from cryptonita.mutable_bytestring import MutableByteString
+from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 '''
 >>> from cryptonita.conv import as_bytes
->>> from cryptonita.immutable_bytestring import ImmutableByteString
->>> from cryptonita.mutable_bytestring import MutableByteString
+>>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
 def as_bytes(raw, encoding='ascii', mutable=False):

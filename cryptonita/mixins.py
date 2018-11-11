@@ -4,8 +4,7 @@ import base64
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B
->>> from cryptonita.immutable_bytestring import ImmutableByteString
->>> from cryptonita.mutable_bytestring import MutableByteString
+>>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 '''
 
@@ -287,6 +286,53 @@ class SequenceMixin:
 
 class MutableSequenceMixin(SequenceMixin):
     __slots__ = ()
+
+    def __setitem__(self, idx, val):
+        ''' Set a byte or a slice of bytes.
+
+            Use an index (number) to set a single byte:
+
+                >>> a = B(b'ABCD', mutable=True)
+
+                >>> a[0] = b'X'
+                >>> a[-1] = 69
+                >>> a
+                'XBCE'
+
+            Use a slice object to set a slice of bytes (of the same
+            length than the destination):
+
+                >>> a[:] = b'1234'
+                >>> a
+                '1234'
+
+                >>> a[1:3] = b'XY'
+                >>> a
+                '1XY4'
+
+                >>> a[1:3] = b'to large'
+                Traceback <...>
+                ValueError: Mismatch lengths, setting 8 bytes into a buffer of 2 bytes length
+
+                >>> a[::2] = b'AB'
+                >>> a
+                'AXB4'
+
+            '''
+        if isinstance(idx, slice):
+            start, stop, step = idx.indices(len(self))
+            dlen = (stop-start)//step
+            if len(val) != dlen:
+                raise ValueError("Mismatch lengths, setting %i bytes into a buffer of %i bytes length" %
+                        (len(val), dlen))
+        elif not isinstance(val, int):
+            if len(val) != 1:
+                raise ValueError("Mismatch lengths, setting %i bytes into a buffer of %i bytes length" %
+                        (len(val), 1))
+
+            val = val[0]
+
+        return super().__setitem__(idx, val)
 
     def __ixor__(self, other):
         ''' xor <other> with <self> in place.
