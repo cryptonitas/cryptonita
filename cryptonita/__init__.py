@@ -22,4 +22,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from .conv import B, load_bytes
+try:
+    from .conv import B, load_bytes
+except SystemError:
+    pass    # this happens when importing from setup.py
+
