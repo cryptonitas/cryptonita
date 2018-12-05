@@ -248,36 +248,34 @@ def guess_key_length(ciphertext, length_space, score_func, min_score=0.5, **scor
                         min_membership=min_score)
     return lengths
 
-def decrypt_cbc_tail_block(cblocks, bsize, oracle):
-    prev_cblock = B(cblocks[-2])
+def decrypt_cbc_last_blk_padding_attack(cblocks, bsize, oracle):
+    prev_cblock = cblocks[-2]
 
     x = B(range(bsize, 0, -1), mutable=True)
     x ^= prev_cblock
     for i in range(bsize-1, -1, -1):
         prefix = prev_cblock[:i]
-        padn = B(bsize-i)
+        padn   = B(bsize-i)
         posfix = B(padn * (bsize-i-1)) ^ x[i+1:]
 
-        # forged cblock
+        # forge the penultimate ciphertext block
         cblocks[-2] = B(prefix + B(0) + posfix, mutable=True)
         for n in range(256):
             if prev_cblock[i] == n:
-                # original ciphertext's byte and forged byte
-                # skip this because we are not forgering anything
                 continue
 
-            # update forged byte
+            # update the forged byte
             cblocks[-2][i] = n
             forged_ciphertext = B('').join(cblocks)
 
-            good = oracle(B(forged_ciphertext))
+            good = oracle(forged_ciphertext)
             if good:
                 x[i] = (padn ^ B(n))
                 break
 
     cblocks[-2] = prev_cblock   # restore backup
     x ^= prev_cblock
-    return x
+    return x    # plain text block
 
 def decrypt_cbc_padding_attack(ciphertext, bsize, oracle, iv=None):
     p = []
@@ -287,7 +285,7 @@ def decrypt_cbc_padding_attack(ciphertext, bsize, oracle, iv=None):
     cblocks = list(ciphertext.nblocks(bsize))
 
     while len(cblocks) > 1:
-        p.append(decrypt_cbc_tail_block(cblocks, bsize, oracle))
+        p.append(decrypt_cbc_last_blk_padding_attack(cblocks, bsize, oracle))
         del cblocks[-1]
 
     p.reverse()
