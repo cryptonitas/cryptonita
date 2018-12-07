@@ -1,8 +1,8 @@
-import base64
+import base64, bisect
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 '''
->>> from cryptonita.conv import as_bytes
+>>> from cryptonita.conv import as_bytes, transpose, B, uniform_length
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
@@ -114,3 +114,111 @@ def load_bytes(fp, mode='rb', **k):
 # alias
 B = as_bytes
 
+def transpose(sequences):
+    ''' Given a list of sequences, stack them, see them as a matrix,
+        transpose it and return it as another list of sequences.
+
+            >>> s1 = B('ABCD')
+            >>> s2 = B('1234')
+            >>> s3 = B('9876')
+
+            >>> transpose([s1, s2, s3])
+            ['A19', 'B28', 'C37', 'D46']
+
+        If the lengths are different, it is not possible to transpose
+        them because some of the output sequences will have missing bytes:
+
+            >>> s2 = s2[:2] # two bytes less
+            >>> s3 = s3[:3] # one byte less
+
+            >>> transpose([s1, s2, s3])
+            Traceback <...>
+            ValueError: Sequences have different length: first sequence has 4 bytes but the 2th has 2.
+        '''
+
+    l = len(sequences[0])
+    for i, seq in enumerate(sequences, 1):
+        if len(seq) != l:
+            raise ValueError("Sequences have different length: first sequence has %i bytes but the %ith has %i." % (
+                l, i, len(seq)))
+
+    output = []
+    for i in range(l):
+        output.append(B(seq[i] for seq in sequences))
+
+    return output
+
+def uniform_length(sequences, *, drop=0, length=None):
+    ''' Given a list of sequences, stack them and see them as a matrix:
+            >>> seqs = [B('ABCD'), B('12'), B('987'), B('ABC'), B('ABCD')]
+            >>> seqs                    # byexample: +norm-ws
+            ['ABCD',
+             '12',
+             '987',
+             'ABC',
+             'ABCD']
+
+        Then, drop the sequences that are too short and cut the larger ones
+        until get all the sequences of the same length.
+
+        How many sequences are we willing to drop can be controlled by the
+        <drop> parameter (a percentage).
+
+            >>> l = uniform_length(list(seqs), drop=0.5)
+            >>> l.sort()
+            >>> l                   # byexample: +norm-ws
+            ['987',
+             'ABC',
+             'ABC',
+             'ABC']
+
+            >>> l = uniform_length(list(seqs), drop=0)
+            >>> l.sort()
+            >>> l                   # byexample: +norm-ws
+            ['12',
+             '98',
+             'AB',
+             'AB',
+             'AB']
+
+            >>> l = uniform_length(list(seqs), drop=1)
+            >>> l.sort()
+            >>> l                   # byexample: +norm-ws
+            ['ABCD',
+             'ABCD']
+
+        Alternatively, you can set the wanted length:
+
+            >>> l = uniform_length(list(seqs), length=3)
+            >>> l.sort()
+            >>> l                   # byexample: +norm-ws
+            ['987',
+             'ABC',
+             'ABC',
+             'ABC']
+
+        Note that the modifications are done *in place* and that the
+        original sequences are *reordered* in an unspecified order.
+    '''
+
+    if length is not None:
+        sequences[:] = [seq[:length] if len(seq) != length else seq
+                        for seq in sequences if len(seq) >= length]
+        return sequences
+
+    sequences.sort(key=lambda seq: len(seq))
+    slens = [len(seq) for seq in sequences]
+
+    idx = min(int(drop * len(sequences)), len(sequences)-1)
+    min_len = slens[idx]
+
+    ilow = bisect.bisect_left(slens, min_len, 0, idx)
+    ihi = bisect.bisect_right(slens, min_len, idx)
+
+    # cut the too large
+    sequences[ihi:] = [seq[:min_len] for seq in sequences[ihi:]]
+
+    # drop all the sequences too short
+    sequences = sequences[ilow:]
+
+    return sequences
