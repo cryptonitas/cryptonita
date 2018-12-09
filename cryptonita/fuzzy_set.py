@@ -222,7 +222,18 @@ class FuzzySet(dict, collections.Set):
                 if self[k] < n:
                     del self[k]
 
+    def scale(self, n):
+        r'''Readjust the probability/membership of all the elements
+            multiplying them by <n>.
 
+            >>> g = FuzzySet(['a', 'b', 'c', 'd'], [0.4, 0.4, 0.8, 0.4])
+
+            >>> g.scale(0.5)
+            >>> g
+            {'c' -> 0.4000, 'd' -> 0.2000, 'b' -> 0.2000, 'a' -> 0.2000}
+        '''
+        for k in self:
+            self[k] *= n
 
     def update(self, other):
         r'''Perform the union of this set and the <other> and update self
@@ -382,4 +393,10 @@ def join_fuzzy_sets(iterable, cut_off, j):
 
     # build up the fuzzy set
     return FuzzySet(dict(tmp))
+
+def len_join_fuzzy_sets(iterable):
+    x = 1
+    for k in iterable:
+        x *= len(k)
+    return x
 
