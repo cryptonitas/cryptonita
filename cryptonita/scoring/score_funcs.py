@@ -4,6 +4,7 @@ import itertools
 from collections import Counter
 
 import scipy.stats as stats
+import numpy as np
 from langdetect import detect_langs
 
 from cryptonita import B
@@ -13,6 +14,7 @@ from cryptonita.helpers import are_bytes_or_fail
 >>> # Convenient definitions
 >>> from cryptonita import B
 >>> from cryptonita.scoring import *
+>>> from cryptonita.scoring.freq import etaoin_shrdlu
 
 '''
 
@@ -34,6 +36,58 @@ def all_ascii_printable(m):
     '''
     are_bytes_or_fail(m, 'm')
     return 1 if all((32 <= b <= 126 or 9 <= b <= 13) for b in m) else 0
+
+def fit_freq_score(m, expected_prob):
+    '''
+        >>> expected_prob = etaoin_shrdlu()
+        >>> fit_freq_score(B("These are not the droids you are looking for"),
+        ...         expected_prob)
+        0.5
+
+        >>> fit_freq_score(B("7h353 4r3 n07 7h3 dr01d5 y0u 4r3 l00k1n6 f0r"),
+        ...         expected_prob)
+        0
+    '''
+    N = len(m)
+
+    # use bytes (aka numbers)   TODO support this using hash and == in ByteString?
+    expected_prob = {ord(k): pr for k, pr in expected_prob.items()}
+
+    alphabet = [k for k in expected_prob]
+    alphabet.sort()
+
+    efreq = [expected_prob[k] * N for k in alphabet]
+
+    ofreq = m.freq()
+    ofreq = [ofreq.get(k, 0) for k in alphabet]
+
+    # The "unexpected" events:
+    # If the expected probabilities don't sum up to 1 (the expected freq
+    # don't sum up to N), the missing prob/freq are for the "unexpected" events
+    # Make sure it is a non-zero very low frequency
+    _min = min(efreq) / 16
+    efreq.append(max(_min, N-sum(efreq)))
+    ofreq.append(N-sum(ofreq))  # the observed unexpected events can be zero
+
+    x = np.arange(len(efreq))
+    bins = [0]
+    current_bin = 0
+    for i in x:
+        current_bin += efreq[i]
+        if current_bin > 8:
+            bins.append(i+1)
+            current_bin = 0
+    if current_bin > 0:
+        bins.append(x[-1]+1)
+
+    assert len(efreq) == len(ofreq) == len(x)
+
+    ehist, bins = np.histogram(x, weights=efreq, bins=bins)
+    ohist, _ = np.histogram(x, weights=ofreq, bins=bins)
+
+    _, p = stats.chisquare(ohist, ehist)
+
+    return 0 if p <= 0.05 else 0.5
 
 def is_language(m, language):
     return detect_langs(m)[language]

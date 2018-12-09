@@ -16,6 +16,7 @@ deps:
 
 test: clean_test
 	@byexample -l python cryptonita/*.py
+	@byexample -l python cryptonita/scoring/*.py
 	@make -s clean_test
 
 dist:
