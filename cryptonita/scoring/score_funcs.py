@@ -123,7 +123,7 @@ def yes_no_score(m, yes_prob=0.5):
 
     return 1 - stats.binom_test(sucessess, n=bits)
 
-def icoincidences(seq, N=1, mode='ngrams'):
+def icoincidences(seq):
     r'''
         Take the sequence <seq> that can be:
          - a ByteString
@@ -217,7 +217,7 @@ def key_length_by_hamming_distance(length, ciphertext):
     return 1 - (distance / (l*8))
 
 
-def key_length_by_ic(length, ciphertext, N=1):
+def key_length_by_ic(length, ciphertext):
     ''' Score the possible <length> of the key that was used to encrypt
         and obtain the <ciphertext> using the Index of Coincidence (IC).
 
@@ -226,7 +226,7 @@ def key_length_by_ic(length, ciphertext, N=1):
 
         and compute the IC.
         '''
-    return icoincidences(B(ciphertext[::length]), N)
+    return icoincidences(B(ciphertext[::length]))
 
 
 # (b - a + 1)**2 - 1 / 12  = (b==1, a==0) -> 3/12
