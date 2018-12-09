@@ -13,7 +13,7 @@ from itertools import product
 '''
 
 def brute_force(ciphertext, score_func, key_space=1,
-                        min_score=0.25):
+                        min_score=0):
     r'''Guess what key was used to xor the <ciphertext>.
         Guessing means try every single possible key so we need to score
         each try with <score_func> to see what key is really useful.
