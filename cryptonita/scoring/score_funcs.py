@@ -37,7 +37,7 @@ def all_ascii_printable(m):
     are_bytes_or_fail(m, 'm')
     return 1 if all((32 <= b <= 126 or 9 <= b <= 13) for b in m) else 0
 
-def fit_freq_score(m, expected_prob):
+def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
     '''
         >>> expected_prob = etaoin_shrdlu()
         >>> fit_freq_score(B("These are not the droids you are looking for"),
@@ -49,9 +49,6 @@ def fit_freq_score(m, expected_prob):
         0
     '''
     N = len(m)
-
-    # use bytes (aka numbers)   TODO support this using hash and == in ByteString?
-    expected_prob = {ord(k): pr for k, pr in expected_prob.items()}
 
     alphabet = [k for k in expected_prob]
     alphabet.sort()
@@ -87,7 +84,7 @@ def fit_freq_score(m, expected_prob):
 
     _, p = stats.chisquare(ohist, ehist)
 
-    return 0 if p <= 0.05 else 0.5
+    return p if return_p else (0 if p <= significance else 0.5)
 
 def is_language(m, language):
     return detect_langs(m)[language]
