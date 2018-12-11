@@ -46,27 +46,32 @@ _tmp = [
 ]
 
 _utotal = _ltotal = 0
-en_upper_letter_freq, en_lower_letter_freq, en_letter_freq = {}, {}, {}
+_en_upper_letter_freq, _en_lower_letter_freq, _en_letter_freq = {}, {}, {}
 for letter, ucount, lcount in zip(_tmp[::3], _tmp[1::3], _tmp[2::3]):
-    en_upper_letter_freq[B(letter.upper())] = ucount
-    en_lower_letter_freq[B(letter.lower())] = lcount
+    _en_upper_letter_freq[B(letter.upper())] = ucount
+    _en_lower_letter_freq[B(letter.lower())] = lcount
 
     _utotal += ucount
     _ltotal += lcount
 
-en_letter_freq.update(en_upper_letter_freq)
-en_letter_freq.update(en_lower_letter_freq)
+_en_letter_freq.update(_en_upper_letter_freq)
+_en_letter_freq.update(_en_lower_letter_freq)
 
 for freq_by_letter, total in (
-        (en_upper_letter_freq, _utotal),
-        (en_lower_letter_freq, _ltotal),
-        (en_letter_freq, _utotal + _ltotal)):
+        (_en_upper_letter_freq, _utotal),
+        (_en_lower_letter_freq, _ltotal),
+        (_en_letter_freq, _utotal + _ltotal)):
     for letter in freq_by_letter:
         freq_by_letter[letter] /= total
 
-en_upper_letter_freq = FuzzySet(en_upper_letter_freq)
-en_lower_letter_freq = FuzzySet(en_lower_letter_freq)
-en_letter_freq = FuzzySet(en_letter_freq)
+def en_upper_letter_freq():
+    return FuzzySet(_en_upper_letter_freq)
+
+def en_lower_letter_freq():
+    return FuzzySet(_en_lower_letter_freq)
+
+def en_letter_freq():
+    return FuzzySet(_en_letter_freq)
 
 # Resource
 # http://norvig.com/mayzner.html
@@ -103,21 +108,33 @@ _space_count = sum(c for c in _tmp[1::2])   # aka word count
 _letter_count = sum(l*c for l, c in zip(_tmp[::2], _tmp[1::2]))
 _space_freq = _space_count / (_space_count + _letter_count)
 
-def etaoin_shrdlu(include_space=True, n=12, uppercase=False):
-    s = en_lower_letter_freq.copy()
+def etaoin_shrdlu(include_space=True, n=12):
+    ''' Frequency of the lowercase letters taken from a set of
+        English texts that mixed lowercase and uppercase letters.
+
+        If include_space is True, include the space character in the
+        frequency.
+    '''
+    s = en_lower_letter_freq()
     if include_space:
         s.scale(1-_space_freq)
         s[B(' ')] = _space_freq
         n += 1
 
     s.cut_off(n=n)
-    if uppercase:
-        return FuzzySet({k.upper(): v for k, v in s.items()})
-    else:
-        return s
+    return s
 
 def tsamcin_brped(n=12):
-    s = en_upper_letter_freq.copy()
+    ''' Frequency of the uppercase letters taken from a set of English
+        texts that mixed lowercase and uppercase letters.
+
+        If you are interested in the frequency of english letters in general
+        but your text is uppercase, change it to lowercase and use
+        etaoin_shrdlu.
+
+        The space character is not included.
+        '''
+    s = en_upper_letter_freq()
     s.cut_off(n=n)
 
     return s
