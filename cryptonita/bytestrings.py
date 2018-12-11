@@ -30,6 +30,28 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
 
             >>> list(s.iduplicates(distance=1, idx_of='first'))
             [0]
+
+        For convenience, iterating a ImmutableByteString yields integers
+        like 'bytes'
+
+            >>> list(s)
+            [65, 66, 65]
+
+            >>> s[0]
+            65
+
+        For this reason a byte string of just 1 byte can be compared
+        with an integer and both a byte and an integer can be used as keys:
+
+            >>> one_byte = B(b'A')
+            >>> (one_byte == 65), (hash(one_byte) == hash(65))
+            (True, True)
+
+            >>> isinstance(one_byte, int)
+            False
+
+            >>> one_byte in s.freq()
+            True
     '''
     __slots__ = ()
     def __repr__(self):
@@ -38,6 +60,15 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
     def tobytes(self):
         return self
 
+    def __hash__(self):
+        if len(self) == 1:
+            return hash(self[0])
+        return super().__hash__()
+
+    def __eq__(self, other):
+        if isinstance(other, int) and len(self) == 1:
+            return other == self[0]
+        return super().__eq__(other)
 
 class MutableByteString(MutableSequenceMixin, bytearray):
     ''' Enhanced version of a mutable byte string.
