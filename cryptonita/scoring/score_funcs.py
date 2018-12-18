@@ -86,6 +86,10 @@ def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
 
     return p if return_p else (0 if p <= significance else 0.5)
 
+def good_written_word_score(m, speller):
+    words = m.split()
+    return sum(speller.check(w) for w in words) / len(words)
+
 def is_language(m, language):
     return detect_langs(m)[language]
 
