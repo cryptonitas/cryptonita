@@ -164,49 +164,45 @@ def uniform_length(sequences, *, drop=0, length=None):
         How many sequences are we willing to drop can be controlled by the
         <drop> parameter (a percentage).
 
-            >>> l = uniform_length(list(seqs), drop=0.5)
-            >>> l.sort()
-            >>> l                   # byexample: +norm-ws
-            ['987',
-             'ABC',
+            >>> uniform_length(seqs, drop=0.5)     # byexample: +norm-ws
+            ['ABC',
+             '987',
              'ABC',
              'ABC']
 
-            >>> l = uniform_length(list(seqs), drop=0)
-            >>> l.sort()
-            >>> l                   # byexample: +norm-ws
-            ['12',
+            >>> uniform_length(seqs, drop=0)     # byexample: +norm-ws
+            ['AB',
+             '12',
              '98',
-             'AB',
              'AB',
              'AB']
 
-            >>> l = uniform_length(list(seqs), drop=1)
-            >>> l.sort()
-            >>> l                   # byexample: +norm-ws
+            >>> uniform_length(seqs, drop=1)     # byexample: +norm-ws
             ['ABCD',
              'ABCD']
 
         Alternatively, you can set the wanted length:
 
-            >>> l = uniform_length(list(seqs), length=3)
-            >>> l.sort()
-            >>> l                   # byexample: +norm-ws
-            ['987',
-             'ABC',
+            >>> uniform_length(seqs, length=3)     # byexample: +norm-ws
+            ['ABC',
+             '987',
              'ABC',
              'ABC']
-
-        Note that the modifications are done *in place* and that the
-        original sequences are *reordered* in an unspecified order.
     '''
 
     if length is not None:
-        sequences[:] = [seq[:length] if len(seq) != length else seq
+        return [seq[:length] if len(seq) != length else seq
                         for seq in sequences if len(seq) >= length]
-        return sequences
 
-    sequences.sort(key=lambda seq: len(seq))
+    sequences, original_idxs = zip(
+            *sorted(
+                ((s, idx) for idx, s in enumerate(sequences)),
+                key = lambda seq_idx: (len(seq_idx[0]), seq_idx[1])
+                )
+            )
+
+    sequences = list(sequences)
+
     slens = [len(seq) for seq in sequences]
 
     idx = min(int(drop * len(sequences)), len(sequences)-1)
@@ -221,4 +217,12 @@ def uniform_length(sequences, *, drop=0, length=None):
     # drop all the sequences too short
     sequences = sequences[ilow:]
 
-    return sequences
+    # restore the original order
+    sequences, _ = zip(
+            *sorted(
+                zip(sequences, original_idxs),
+                key = lambda seq_idx: seq_idx[1]
+                )
+            )
+
+    return list(sequences)
