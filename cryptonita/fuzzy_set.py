@@ -235,6 +235,18 @@ class FuzzySet(dict, collections.Set):
         for k in self:
             self[k] *= n
 
+    def normalize(self):
+        r'''Makes the sum of all the elements to be 1.
+
+            >>> g = FuzzySet(['a', 'b', 'c', 'd'], [0.4, 0.4, 0.8, 0.4])
+            >>> g.normalize()
+            >>> g
+            {'c' -> 0.4000, 'd' -> 0.2000, 'b' -> 0.2000, 'a' -> 0.2000}
+        '''
+        s = sum(pr for pr in self.values())
+        if s > 0:
+            self.scale(1.0/s)
+
     def update(self, other):
         r'''Perform the union of this set and the <other> and update self
             with the union.
@@ -338,6 +350,15 @@ class FuzzySet(dict, collections.Set):
     def __or__(self, other):
         return self.union(other)
 
+    def __iand__(self, other):
+        tmp = self.intersection(other)
+        self.clear()
+        dict.update(self, tmp)
+        return self
+
+    def __ior__(self, other):
+        self.update(other)
+        return self
 
 def join_fuzzy_sets(iterable, cut_off, j):
     r'''
