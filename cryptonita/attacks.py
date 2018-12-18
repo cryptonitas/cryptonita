@@ -1,4 +1,3 @@
-import cryptonita.scoring as scoring
 from cryptonita.fuzzy_set import FuzzySet
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail
@@ -291,3 +290,21 @@ def decrypt_cbc_padding_attack(ciphertext, bsize, oracle, iv=None):
     p.reverse()
     return B('').join(p)
 
+def correct_key(key, ciphertexts, suggester):
+    ''' Use <key> to decrypt each <ciphertext> and for each plaintext
+        try to correct the <key> to improve the quality of the plaintexts
+        using the corrections suggested by <suggester>.
+
+        Return a list of possible bytes, one for each key.
+        '''
+    corrections = [FuzzySet() for _ in range(len(key))]
+    for ctext in ciphertexts:
+        ptext = ctext[:len(key)] ^ key
+        tmp = suggester(key, ctext, ptext)
+        for sym_corrections, new_sym_corrections in zip(corrections, tmp):
+            new_sym_corrections.normalize()
+            sym_corrections |= new_sym_corrections
+            sym_corrections.normalize()
+
+    assert all(len(sym_corrections) >= 0 for sym_corrections in corrections)
+    return corrections
