@@ -13,7 +13,9 @@ def good_written_word_suggester(key, ciphertext, plaintext, speller):
         with the suggested patches.
         '''
     corrections = []
-    for word in plaintext.split(b' '):
+    prev_idx = 0
+    for word in plaintext.split(sep=None):
+        idx = plaintext.find(word, prev_idx)
         word = B(word)
         wcorrections = [FuzzySet() for _ in range(len(word))]
 
@@ -26,11 +28,15 @@ def good_written_word_suggester(key, ciphertext, plaintext, speller):
             for sym_corrections, suggested_sym in zip(wcorrections, wpatch):
                 sym_corrections[B(suggested_sym)] = 1
 
-        corrections.extend(wcorrections)
-        corrections.append(FuzzySet([B(0)]))   # the whitespace
+        for _ in range(idx-prev_idx):
+            corrections.append(FuzzySet([B(0)]))   # add any whitespace before the word
 
-    # the last is a spurious correction of a non-existent whitespace
-    corrections.pop()
+        corrections.extend(wcorrections)
+        prev_idx = idx + len(word)
+
+    for _ in range(len(plaintext)-prev_idx):
+        corrections.append(FuzzySet([B(0)]))   # add any whitespace after the last word
+
     assert len(corrections) == len(key)
     assert all(len(sym_corrections) >= 0 for sym_corrections in corrections)
     return corrections
