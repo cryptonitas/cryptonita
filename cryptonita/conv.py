@@ -1,8 +1,8 @@
-import base64, bisect
+import base64, bisect, struct
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 '''
->>> from cryptonita.conv import as_bytes, transpose, B, uniform_length
+>>> from cryptonita.conv import as_bytes, transpose, B, uniform_length, repack
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
@@ -20,7 +20,7 @@ def as_bytes(raw, encoding='ascii', mutable=False):
             >>> as_bytes([0, 1])
             '\x00\x01'
 
-         - from an iterable inclusing another string of bytes
+         - from an iterable including another string of bytes
 
             >>> as_bytes(as_bytes(b'\x00\x01'))
             '\x00\x01'
@@ -226,3 +226,37 @@ def uniform_length(sequences, *, drop=0, length=None):
             )
 
     return list(sequences)
+
+def repack(iterable, ifmt, ofmt):
+    ''' Repack each element in <iterable> packing them with <ifmt>
+        first and then unpacking them with <ofmt>.
+
+        See the documentation of the Python standard module struct.
+
+        To repack a list of numbers of 4 bytes into a sequence
+        of bytes in big endian we do:
+
+        >>> list(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
+        ['\xaa', '\xbb', '\xcc', '\xdd', '\xa1', '\xb2', '\xc3', '\xd4']
+
+        Any input/output formats are valid as long as they have the same
+        'size':
+
+        >>> list(repack([1], ifmt='>I', ofmt='>H'))
+        Traceback <...>
+        ValueError: Format sizes mismatch: input >I (4 bytes), output >H (2 bytes)
+
+
+        '''
+    isize = struct.calcsize(ifmt)
+    osize = struct.calcsize(ofmt)
+    if isize != osize:
+        raise ValueError("Format sizes mismatch: input " +\
+                         "%s (%i bytes), output %s (%i bytes)" % (
+                             ifmt, isize,
+                             ofmt, osize))
+
+    for i in iterable:
+        for o in struct.unpack(ofmt, struct.pack(ifmt, i)):
+            yield o
+
