@@ -360,6 +360,15 @@ class FuzzySet(dict, collections.Set):
         self.update(other)
         return self
 
+    def sorted_items(self, reverse=True):
+        return sorted(self.items(), key=itemgetter(1, 0), reverse=True)
+
+    def sorted_keys(self, reverse=True):
+        return (k for k, _ in self.sorted_items(reverse))
+
+    def sorted_values(self, reverse=True):
+        return (v for _, v in self.sorted_items(reverse))
+
 def join_fuzzy_sets(iterable, cut_off, j):
     r'''
         Join the given fuzzy sets and return a single one.
