@@ -36,6 +36,30 @@ def all_ascii_printable(m):
     are_bytes_or_fail(m, 'm')
     return 1 if all((32 <= b <= 126 or 9 <= b <= 13) for b in m) else 0
 
+def all_in_alphabet(m, alphabet):
+    ''' Score 1 if all the elements in the message <m> are in the <alphabet>.
+
+        >>> alphabet = set(B(string.printable, encoding='ascii'))
+
+        >>> message = B('hello world', encoding='ascii')
+        >>> all_in_alphabet(message, alphabet)
+        1
+
+        Score with 0 otherwise
+
+        >>> message = B('hello\x00world', encoding='ascii')
+        >>> all_in_alphabet(message, alphabet)
+        0
+
+        If the <alphabet> is the sequence of all ASCII printable characters,
+        use all_ascii_printable instead, it is faster.
+
+        Use all_in_alphabet for 'custom' alphabets.
+    '''
+
+    are_bytes_or_fail(m, 'm')
+    return 1 if len(set(m) - set(alphabet)) == 0 else 0
+
 def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
     '''
         >>> expected_prob = etaoin_shrdlu()
