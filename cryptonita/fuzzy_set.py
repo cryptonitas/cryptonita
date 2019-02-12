@@ -1,7 +1,8 @@
 import heapq
 import collections
 import itertools
-from operator import itemgetter
+import functools
+from operator import itemgetter, mul as mul_func
 
 '''
 >>> # Convenient definitions
@@ -400,9 +401,45 @@ def join_fuzzy_sets(iterable, cut_off, j):
         >>> join_fuzzy_sets([A, B, C], cut_off=0.2, j='')
         {'yjs' -> 0.2520, 'yes' -> 0.2160}
 
+        If <cut_off> is greater or equal than 1, it will be interpreted as
+        the number of the most probable strings instead of a minimum probability.
+
+        >>> join_fuzzy_sets([A, B, C], cut_off=3, j='')
+        {'yjs' -> 0.2520, 'yes' -> 0.2160, 'ajs' -> 0.1680}
+
+        >>> join_fuzzy_sets([A, B, C], cut_off=1, j='')
+        {'yjs' -> 0.2520}
+
     '''
 
-    assert 0 <= cut_off <= 1.0
+    assert 0 <= cut_off
+
+    if cut_off >= 1:
+        counters = [len(fs) for fs in iterable]
+
+        vals = [[(pr, idx) for pr in fs.values()] for idx, fs in enumerate(iterable)]
+        vals = sorted(sum(vals, []))
+
+        for _, idx in vals:
+            if counters[idx] == 1:
+                continue    # skip it, at least 1 key of each fuzzy set must survive
+
+            counters[idx] -= 1
+
+            if functools.reduce(mul_func, counters) <= cut_off:
+                counters[idx] += 1
+                break
+
+        sets = []
+        for fs, counter in zip(iterable, counters):
+            fs = fs.copy()
+            fs.cut_off(counter)     # TODO optimize this
+            sets.append(fs)
+
+        upper_set = join_fuzzy_sets(sets, cut_off=0.0, j=j)
+        upper_set.cut_off(cut_off)
+        return upper_set
+
 
     all_possibilities = itertools.product(*(fs.items() for fs in iterable))
 
