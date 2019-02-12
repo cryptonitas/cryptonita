@@ -13,7 +13,7 @@ def inv_right_shift(v, b, m):
         >>> inv_right_shift(v, b, m)
         524889969
 
-        >>> y, b, m = 0xffffffff, 4, 0
+        >>> y, b, m = 0xffffffff, 4, 0xffffffff
         >>> v = y ^ ((y >> b) & m)
 
         >>> inv_right_shift(v, b, m)
@@ -39,7 +39,7 @@ def inv_left_shift(v, b, m):
         >>> inv_left_shift(v, b, m)
         524889969
 
-        >>> y, b, m = 0xffffffff, 4, 0
+        >>> y, b, m = 0xffffffff, 4, 0xffffffff
         >>> v = y ^ ((y << b) & m)
 
         >>> inv_left_shift(v, b, m)
@@ -55,14 +55,15 @@ def inv_left_shift(v, b, m):
 
     return g
 
-def clone_MT19937(out):
+def clone_mt19937(out):
     ''' Clone the internal state of a Mersenne Twister 19937 (MT19937)
         from its output <out>.
 
         For MT19937 we need 624 sequential bytes at minimum to clone
         the state.
 
-            >>> clone_MT19937(B('abc'))           # byexample: +norm-ws
+            >>> from cryptonita.attacks.prng import clone_mt19937
+            >>> clone_mt19937(B('abc'))           # byexample: +norm-ws
             Traceback <...>
             ValueError: You need at least 624 bytes to clone the MT19937 PRNG
                         but you have only 3.
@@ -84,12 +85,17 @@ def clone_MT19937(out):
 
     n = 624
     if len(out) < n:
-        raise ValueError("You need at least %i bytes to clone the MT19937 PRNG" +\
-                         " but you have only %i." % (n, len(out)))
+        raise ValueError(("You need at least %i bytes to clone the MT19937 PRNG" +\
+                          " but you have only %i.") % (n, len(out)))
+
+    u, d = 11, 0xffffffff
+    s, b = 7, 0x9d2c5680
+    t, c = 15, 0xefc60000
+    l = 18
 
     state = []
     for y in out:
-        y = inv_right_shift(y, l, 0)    # inv of y ^ ((y >> l) & 0)
+        y = inv_right_shift(y, l, 0xffffffff)    # inv of y ^ ((y >> l) & 0)
         y = inv_left_shift(y, t, c)     # inv of y ^ ((y << t) & c)
         y = inv_left_shift(y, s, b)     # inv of y ^ ((y << s) & b)
         y = inv_right_shift(y, u, d)    # inv of y ^ ((y >> u) & d)
@@ -98,20 +104,23 @@ def clone_MT19937(out):
 
     found = False
     i = 0
-    g = Mersenne_Twister_19937(0)
-    while not found and i <= (len(out) - n):
-        g.reset_state(state[i:i+n], index=n)
+    g = MT19937(0)
+    g.reset_state(state[i:i+n], index=n)
 
+    while i+n < len(out):
         v = g.extract_number()
         found = v == out[i+n]
-        i += 1
+        if found:
+            g.reset_state(state[i:i+n], index=n)
+            break
 
-    i -= 1
-    g.reset_state(state[i:i+n], index=n)
+        i += 1
+        g.reset_state(state[i:i+n], index=n)
+
     return g
 
 # https://en.wikipedia.org/wiki/Mersenne_Twister
-class Mersenne_Twister_19937:
+class MT19937:
     def __init__(self, seed):
         w, n, m, r = 32, 624, 397, 31
         a, f = 0x9908b0df, 1812433253
@@ -178,3 +187,4 @@ class Mersenne_Twister_19937:
 
     def __iter__(self):
         return self.extract_number()
+
