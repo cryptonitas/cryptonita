@@ -2,12 +2,12 @@ from cryptonita.fuzzy_set import FuzzySet
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail
 
-from itertools import product
+from itertools import product, zip_longest
 
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B
->>> from cryptonita.attacks import brute_force, freq_attack  # byexample: +timeout=10
+>>> from cryptonita.attacks import brute_force, freq_attack, search  # byexample: +timeout=10
 
 '''
 
@@ -148,7 +148,7 @@ def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1):
         _plain_ngrams = filter(lambda ngram: len(ngram) == N,
                                             most_common_plain_ngrams)
 
-        # if our hypthesis is correct, at least one of the c cipher ngrams
+        # if our hypothesis is correct, at least one of the c cipher ngrams
         # will be (p ^ k) where p is one of the p plain ngrams
         # if this is true, one of the 'proposed keys' keys will be the real
         # secret key k
@@ -209,10 +209,74 @@ def correct_key(key, ciphertexts, suggester):
     assert all(len(sym_corrections) >= 0 for sym_corrections in corrections)
     return corrections
 
-def search(start, stop, oracle):
-    for i in range(start, stop):
-        if oracle(i):
+def search(start, stop, oracle, likely=None):
+    ''' Search the first value in the range <start>:<stop>
+        that statisfy the <oracle> condition.
+
+        >>> def is_4(i):
+        ...     print("%i == 4?" % i)
+        ...     return i == 4
+
+        >>> search(2, 10, is_4)
+        2 == 4?
+        3 == 4?
+        4 == 4?
+        4
+
+        The <likely> optional parameter control from where the search
+        should start. By default (<likely>==None), starts from
+        the begin (<start>).
+
+        But other values are possible like backward:
+
+        >>> search(2, 10, is_4, likely='backward')
+        9 == 4?
+        8 == 4?
+        7 == 4?
+        6 == 4?
+        5 == 4?
+        4 == 4?
+        4
+
+        From the middle point (notice how the search expands from the
+        middle to the extremes):
+
+        >>> search(2, 10, is_4, likely='middle')
+        6 == 4?
+        5 == 4?
+        7 == 4?
+        4 == 4?
+        4
+
+        Or just from an arbitrary point:
+        >>> search(2, 10, is_4, likely=8)
+        8 == 4?
+        7 == 4?
+        9 == 4?
+        6 == 4?
+        5 == 4?
+        4 == 4?
+        4
+
+    '''
+
+    assert start <= stop
+    if likely is None:
+        likely = start
+    elif likely == 'middle':
+        likely = ((stop + start) // 2)
+    elif likely == 'backward':
+        likely = stop
+
+    assert start <= likely <= stop
+
+    lower  = range(likely-1, start-1, -1)
+    higher = range(likely, stop)
+
+    for i, j in zip_longest(higher, lower):
+        if i is not None and oracle(i):
             return i
 
-
+        if j is not None and oracle(j):
+            return j
 
