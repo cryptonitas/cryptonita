@@ -113,6 +113,27 @@ def good_written_word_score(m, speller):
     words = m.split(sep=None)
     return sum(speller.check(w) for w in words) / len(words)
 
+def good_written_word_bit_score(m, speller):
+    words = m.split(sep=None)
+    score = 0
+    for word in words:
+        if speller.check(word):
+            score += 1
+        else:
+            suggestions = speller.suggest(word)
+            bit_length = len(word) * 8
+
+            min_hamming_distance = bit_length
+            w = B(word)
+            for s in (s for s in suggestions if len(s) == len(word)):
+                hd = w.hamming_distance(B(s).inf())
+                if hd < min_hamming_distance:
+                    min_hamming_distance = hd
+
+            score += (bit_length - min_hamming_distance) / bit_length
+
+    return score / len(words)
+
 def is_language(m, language):
     return detect_langs(m)[language]
 
