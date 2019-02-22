@@ -53,7 +53,7 @@ setup(
     python_requires='>=3.3',
     install_requires=install_deps,
 
-    keywords='crypto cryptography crypto-analysis matasano',
+    keywords='crypto cryptography crypto-analysis',
 
     packages=['cryptonita'],
 )

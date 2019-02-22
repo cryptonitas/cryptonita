@@ -238,7 +238,7 @@ def icoincidences(seq):
         is actually a message encrypted by doing a xor with a key of just 1 byte.
         Therefore, it should have more coincidences than the rest of the strings.
 
-        >>> ciphertexts = open('data/4.txt', 'rb').read().strip().split(b'\n')
+        >>> ciphertexts = open('test/ds/4.txt', 'rb').read().strip().split(b'\n')
         >>> ciphertexts = [B(c, encoding=16) for c in ciphertexts]
 
         >>> scores_and_indexes = [(icoincidences(c), i) \
