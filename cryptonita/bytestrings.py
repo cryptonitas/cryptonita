@@ -5,6 +5,8 @@ from cryptonita.mixins import (
         SequenceStatsMixin
         )
 
+import numpy as np
+
 '''
 >>> from cryptonita import B
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
@@ -70,6 +72,9 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
             return other == self[0]
         return super().__eq__(other)
 
+    def toarray(self):
+        return np.array(tuple(self))
+
 class MutableByteString(MutableSequenceMixin, bytearray):
     ''' Enhanced version of a mutable byte string.
 
@@ -84,3 +89,6 @@ class MutableByteString(MutableSequenceMixin, bytearray):
 
     def tobytes(self):
         return bytes(self)
+
+    def toarray(self):
+        return np.array(tuple(self))

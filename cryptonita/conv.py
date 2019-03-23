@@ -1,6 +1,8 @@
 import base64, bisect, struct
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
+import numpy as np
+
 '''
 >>> from cryptonita.conv import as_bytes, transpose, B, uniform_length, repack
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
@@ -20,6 +22,16 @@ def as_bytes(raw, encoding='ascii', mutable=False):
             >>> as_bytes([0, 1])
             '\x00\x01'
 
+         - from flatten 1-dimentional arrays (numpy)
+
+            >>> import numpy as np
+            >>> as_bytes(np.array([0, 1]))
+            '\x00\x01'
+
+            >>> as_bytes(np.array([[0], [1]]))
+            Traceback<...>
+            ValueError: only 1-dimentional arrays are supported but array of shape (2, 1) was given
+
          - from an iterable including another string of bytes
 
             >>> as_bytes(as_bytes(b'\x00\x01'))
@@ -30,6 +42,21 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
             >>> as_bytes(u'AB', encoding='utf-8')
             'AB'
+
+         - from a text (str) we support special encodings 'upper' and 'lower'.
+         This is used for academic cryptographers to represent text using ASCII
+         letters only (all uppercase or all lowercase) with spaces
+         each N letters (typically 5).
+
+            >>> as_bytes(u'abcd', encoding='lower')
+            '\x00\x01\x02\x03'
+
+            >>> as_bytes(u'AAABB CCCDD EEE', encoding='upper')
+            '\x00\x00\x00\x01\x01\x02\x02\x02\x03\x03\x04\x04\x04'
+
+            >>> as_bytes(u'abcde ABCDE', encoding='upper')
+            Traceback<...>
+            ValueError: text must contain uppercase plus spaces only.
 
          - it is also supported an overloaded version of <encoding> to map
          a base 16, 64, ... string or bytes into a stream.
@@ -75,15 +102,32 @@ def as_bytes(raw, encoding='ascii', mutable=False):
             # for decoding the string later.
             # Assume that encoding is then 'ascii'
             enc = 'ascii'
+        elif encoding in ('upper', 'lower'):
+            enc = 'ascii'
         else:
             enc = encoding
 
         raw = raw.encode(enc, errors='strict')
 
+    elif isinstance(raw, np.ndarray):
+        if len(raw.shape) != 1:
+            raise ValueError("only 1-dimentional arrays are supported but array of shape %s was given" % str(raw.shape))
+        raw = list(raw)
+
     #   as_bytes([b'\x0A', b'\x0B']) -> b'\x0a\x0b'
     #   as_bytes(b'\x00') -> b'\x00'
     else:
         raw = raw
+
+    # support for 'academic' encoded strings
+    if encoding in ('upper', 'lower'):
+        raw = raw.replace(b' ', b'')
+        if (encoding == 'upper' and not raw.isupper()) or \
+                (encoding == 'lower' and not raw.islower()):
+            raise ValueError("text must contain %scase plus spaces only." % encoding)
+
+        offset = ord('A') if encoding == 'upper' else ord('a')
+        raw = bytes(r - offset for r in raw)
 
     # overloaded meaning of encoding, the new raw bytes are encoded
     # using base 16 (64, other) and we want to decode them.
