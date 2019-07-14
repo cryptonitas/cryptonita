@@ -1,6 +1,6 @@
 '''
 >>> # Convenient definitions
->>> from cryptonita import B
+>>> from cryptonita import B        # byexample: +timeout=10
 '''
 
 def inv_right_shift(v, b, m):

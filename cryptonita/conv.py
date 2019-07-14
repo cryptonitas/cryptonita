@@ -4,7 +4,8 @@ from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 import numpy as np
 
 '''
->>> from cryptonita.conv import as_bytes, transpose, B, uniform_length, repack
+>>> from cryptonita.conv import B           # byexample: +timeout=10
+>>> from cryptonita.conv import as_bytes, transpose, uniform_length, repack
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 

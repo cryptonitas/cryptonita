@@ -3,7 +3,7 @@ import base64
 
 '''
 >>> # Convenient definitions
->>> from cryptonita import B
+>>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 '''

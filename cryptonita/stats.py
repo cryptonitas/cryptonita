@@ -1,7 +1,7 @@
 import math
 def _py_entropy(pk, qk=None, base=None):
     '''
-        >>> from cryptonita.stats import _py_entropy
+        >>> from cryptonita.stats import _py_entropy    # byexample: +timeout=10
 
         Input normalized
         >>> _py_entropy([0.3, 0.5, 0.2])

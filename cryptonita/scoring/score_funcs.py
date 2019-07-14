@@ -12,7 +12,7 @@ from cryptonita.helpers import are_bytes_or_fail
 
 '''
 >>> # Convenient definitions
->>> from cryptonita import B
+>>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.scoring import *
 >>> from cryptonita.scoring.freq import etaoin_shrdlu
 '''

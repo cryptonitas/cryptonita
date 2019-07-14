@@ -8,7 +8,7 @@ from cryptonita.mixins import (
 import numpy as np
 
 '''
->>> from cryptonita import B
+>>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 

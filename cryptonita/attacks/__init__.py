@@ -3,10 +3,11 @@ from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail
 
 from itertools import product, zip_longest
+from operator import xor
 
 '''
 >>> # Convenient definitions
->>> from cryptonita import B
+>>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.attacks import brute_force, freq_attack, search  # byexample: +timeout=10
 
 '''
@@ -44,7 +45,7 @@ def brute_force(ciphertext, score_func, key_space=1,
         <min_score> to keep the memory usage at minumum.
 
             >>> ciphertext = B('\x1a\x14XYXX')
-            >>> brute_force(ciphertext, is_bmp, key_space=2)
+            >>> brute_force(ciphertext, is_bmp, key_space=2)    # byexample: +timeout=10
             {'XY' -> 1.0000}
 
         Otherwise, <key_space> must be an iterable of bytes: each string of bytes
@@ -71,7 +72,7 @@ def brute_force(ciphertext, score_func, key_space=1,
                         min_membership=min_score)
     return keys
 
-def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1):
+def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor):
 
     r'''Try to break the ciphering doing a frequency attack.
         The idea is that the plain text has some ngrams more frequent than
@@ -152,8 +153,7 @@ def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1):
         # will be (p ^ k) where p is one of the p plain ngrams
         # if this is true, one of the 'proposed keys' keys will be the real
         # secret key k
-        #
-        tmp = FuzzySet(((c ^ p, prob.get(p, 1)) for c, p in product(_cipher_ngrams,
+        tmp = FuzzySet(((op(c, p), prob.get(p, 1)) for c, p in product(_cipher_ngrams,
                                                                     _plain_ngrams)),
                                 pr='tuple')
         keys.update(tmp)

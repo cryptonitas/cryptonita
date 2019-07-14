@@ -1,6 +1,6 @@
 '''
 >>> # Convenient definitions
->>> from cryptonita import B
+>>> from cryptonita import B           # byexample: +timeout=10
 '''
 
 import math

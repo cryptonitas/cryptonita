@@ -6,6 +6,7 @@ from operator import itemgetter, mul as mul_func
 
 '''
 >>> # Convenient definitions
+>>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.fuzzy_set import *
 
 '''
