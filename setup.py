@@ -17,6 +17,7 @@ long_description = __doc__
 install_deps=[
         'scipy',
         'langdetect',
+        'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
         ]
 
 setup(
