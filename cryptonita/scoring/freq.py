@@ -139,3 +139,59 @@ def tsamcin_brped(n=12):
 
     return s
 
+# https://norvig.com/mayzner.html
+# Most common n-grams
+_tmp = '''
+th     the
+he     and
+in     ing
+er     ion
+an     tio
+re     ent
+on     ati
+at     for
+en     her
+nd     ter
+ti     hat
+es     tha
+or     ere
+te     ate
+of     his
+ed     con
+is     res
+it     ver
+al     all
+ar     ons
+st     nce
+to     men
+nt     ith
+ng     ted
+se     ers
+ha     pro
+as     thi
+ou     wit
+io     are
+le     ess
+ve     not
+co     ive
+me     was
+de     ect
+hi     rea
+ri     com
+ro     eve
+ic     per
+ne     int
+ea     est
+ra     sta
+ce     cti
+li     ica
+ch     ist
+ll     ear
+be     ain
+ma     one
+si     our
+om     iti
+ur     rat
+'''
+en_bigrams, en_trigrams = zip(*[line.split() for line in _tmp.strip().split('\n')])
+
