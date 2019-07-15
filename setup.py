@@ -20,6 +20,11 @@ install_deps=[
         'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
         ]
 
+optional_deps=[
+        'pycrypto',
+        'aspell-python-py3',    # apt-get install libaspell-dev
+        ]
+
 setup(
     name='cryptonita',
     version=__version__,
@@ -52,7 +57,7 @@ setup(
     ],
 
     python_requires='>=3.3',
-    install_requires=install_deps,
+    install_requires=install_deps + optional_deps,
 
     keywords='crypto cryptography crypto-analysis',
 
