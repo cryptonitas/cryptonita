@@ -75,6 +75,9 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
     def toarray(self):
         return np.array(tuple(self))
 
+    def fhex(self, n=8):
+        return super().hex()[:n]
+
 class MutableByteString(MutableSequenceMixin, bytearray):
     ''' Enhanced version of a mutable byte string.
 
