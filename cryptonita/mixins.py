@@ -5,7 +5,6 @@ import base64
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
-
 '''
 
 class SequenceMixin:
@@ -425,9 +424,11 @@ _number_of_1s_in_byte = tuple(_number_of_1s_in_byte)
 import collections
 import itertools as itools
 from cryptonita.stats import entropy
+import cryptonita.plots
 
-class SequenceStatsMixin:
+class SequenceStatsMixin(cryptonita.plots.SequencePlotMixin):
     __slots__ = ()
+
     def freq(self):
         return collections.Counter(self)
 

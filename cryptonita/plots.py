@@ -1,7 +1,7 @@
-import matplotlib.ticker
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import functools
 
 from cryptonita.helpers import bisect_left_rev, bisect_right_rev
 
@@ -10,100 +10,105 @@ from cryptonita.helpers import bisect_left_rev, bisect_right_rev
 
 def axes_style_decorator(*style_args, **style_kargs):
     def decorator(func):
+        @functools.wraps(func)
         def wrapped(*args, **kargs):
             with sns.axes_style(*style_args, **style_kargs):
                 return func(*args, **kargs)
         return wrapped
     return decorator
 
-@axes_style_decorator('darkgrid')
-def freq(s, n=32, fmin=1, fmax=None, ax=None, **kw):
-    ''' Plot the count of each element in <s> in a bar-plot ordering
-        the elements from the most common to the less.
+class SequencePlotMixin:
+    __slots__ = ()
 
-        <s> must support the freq() method (see SequenceMixin)
+    @axes_style_decorator('darkgrid')
+    def plotfreq(self, n=32, fmin=1, fmax=None, ax=None, **kw):
+        ''' Plot the count of each element in <self> in a bar-plot ordering
+            the elements from the most common to the less.
 
-        Limit the count to <n> elements. If <n> is None, no limit
-        is enforced.
+            <self> must support the freq() method (see SequenceMixin)
 
-        Further pruning is done with <fmax> and <fmin>. If the frequency of
-        an element is greather than <fmax> or less than <fmin>,
-        the element will not be displayed.
-        '''
+            Limit the count to <n> elements. If <n> is None, no limit
+            is enforced.
 
-    # Thanks to
-    # https://stackoverflow.com/questions/33179122/seaborn-countplot-with-frequencies
-    # https://stackoverflow.com/questions/48389751/how-do-i-get-matplotlib-to-order-bar-chart-in-the-same-order-as-my-list
-    # https://matplotlib.org/3.1.1/gallery/statistics/barchart_demo.html
-    autoplot = ax is None
+            Further pruning is done with <fmax> and <fmin>. If the frequency of
+            an element is greather than <fmax> or less than <fmin>,
+            the element will not be displayed.
+            '''
 
-    fig, ax = plt.subplots()
+        # Thanks to
+        # https://stackoverflow.com/questions/33179122/seaborn-countplot-with-frequencies
+        # https://stackoverflow.com/questions/48389751/how-do-i-get-matplotlib-to-order-bar-chart-in-the-same-order-as-my-list
+        # https://matplotlib.org/3.1.1/gallery/statistics/barchart_demo.html
+        autoplot = ax is None
+        s = self
 
-    elems, freqs = zip(*s.freq().most_common(n))
+        fig, ax = plt.subplots()
 
-    # prune
-    ileft  = 0 if fmax is None else bisect_left_rev(freqs, fmax)
-    iright = bisect_right_rev(freqs, fmin, lo=ileft)
+        elems, freqs = zip(*s.freq().most_common(n))
 
-    elems = elems[ileft:iright]
-    freqs = freqs[ileft:iright]
+        # prune
+        ileft  = 0 if fmax is None else bisect_left_rev(freqs, fmax)
+        iright = bisect_right_rev(freqs, fmin, lo=ileft)
 
-    # format
-    elems = ["%02x" % e for e in elems] if isinstance(elems[0], int) else [e.fhex(8) for e in elems]
+        elems = elems[ileft:iright]
+        freqs = freqs[ileft:iright]
 
-    # percentiles
-    fsums = np.cumsum(freqs)
-    ftotal = fsums[-1]
-    percentiles = [p * ftotal for p in [.05, .25, .5, .75, .95]]
-    yticks = []
-    ylabels = []
-    for ix, f in enumerate(fsums):
-        if f > percentiles[0]:
-            while percentiles and f > percentiles[0]:
-                p = percentiles[0]
-                del percentiles[0]
-            yticks.append(ix)
-            ylabels.append(round(p/ftotal, 2))
+        # format
+        elems = ["%02x" % e for e in elems] if isinstance(elems[0], int) else [e.fhex(8) for e in elems]
 
-            if not percentiles:
-                break
+        # percentiles
+        fsums = np.cumsum(freqs)
+        ftotal = fsums[-1]
+        percentiles = [p * ftotal for p in [.05, .25, .5, .75, .95]]
+        yticks = []
+        ylabels = []
+        for ix, f in enumerate(fsums):
+            if f > percentiles[0]:
+                while percentiles and f > percentiles[0]:
+                    p = percentiles[0]
+                    del percentiles[0]
+                yticks.append(ix)
+                ylabels.append(round(p/ftotal, 2))
 
-    ax.set_yticks(yticks)
-    ax.set_yticklabels(ylabels)
-    ax.set_ylabel('Percentile')
+                if not percentiles:
+                    break
 
-    # make twin axis: count and frequency
-    ax2=ax.twiny()
+        ax.set_yticks(yticks)
+        ax.set_yticklabels(ylabels)
+        ax.set_ylabel('Percentile')
 
-    ax.set_xlabel('Count')
-    ax2.set_xlabel('Frequency [%]')
+        # make twin axis: count and frequency
+        ax2=ax.twiny()
 
-    # plot
-    rects = ax.barh(elems, freqs, **kw)
+        ax.set_xlabel('Count')
+        ax2.set_xlabel('Frequency [%]')
 
-    # annotate each bar with the formatted element
-    for rect, el in zip(rects, elems):
-        width = int(rect.get_width())
+        # plot
+        rects = ax.barh(elems, freqs, **kw)
 
-        # Shift the text to the right side of the right edge
-        xloc = 5
-        clr = 'black'
-        align = 'left'
+        # annotate each bar with the formatted element
+        for rect, el in zip(rects, elems):
+            width = int(rect.get_width())
 
-        # Center the text vertically in the bar
-        yloc = rect.get_y() + rect.get_height() / 2
-        ax.annotate(el, xy=(width, yloc), xytext=(xloc, 0),
-                            textcoords="offset points",
-                            ha=align, va='center_baseline', fontsize='small',
-                            color=clr, fontweight='demibold')
+            # Shift the text to the right side of the right edge
+            xloc = 5
+            clr = 'black'
+            align = 'left'
 
-    # fix the frequency range
-    _, xmax = ax.get_xlim()
-    ax2.set_xlim(0, (xmax/ftotal) * 100)
+            # Center the text vertically in the bar
+            yloc = rect.get_y() + rect.get_height() / 2
+            ax.annotate(el, xy=(width, yloc), xytext=(xloc, 0),
+                                textcoords="offset points",
+                                ha=align, va='center_baseline', fontsize='small',
+                                color=clr, fontweight='demibold')
 
-    ax2.grid(None)
+        # fix the frequency range
+        _, xmax = ax.get_xlim()
+        ax2.set_xlim(0, (xmax/ftotal) * 100)
 
-    if autoplot:
-        plt.show()
+        ax2.grid(None)
 
-    return ax
+        if autoplot:
+            plt.show()
+
+        return ax
