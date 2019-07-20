@@ -18,11 +18,18 @@ install_deps=[
         'scipy',
         'langdetect',
         'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
+        'z3-solver',
         ]
 
 optional_deps=[
         'pycrypto',
         'aspell-python-py3',    # apt-get install libaspell-dev
+        ]
+
+extra_deps=[
+        'matplotlib',
+        'numpy',
+        'seaborn',
         ]
 
 setup(
