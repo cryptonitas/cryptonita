@@ -1,9 +1,14 @@
-import seaborn as sns
-import matplotlib.pyplot as plt
-import numpy as np
-import functools
 
+import functools
 from cryptonita.helpers import bisect_left_rev, bisect_right_rev
+
+def import_plot_libs():
+    import numpy as np
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    return np, mpl, plt, sns
 
 # See for more plot ideas:
 # https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python/
@@ -16,6 +21,7 @@ def axes_style_decorator(*style_args, **style_kargs):
                 return func(*args, **kargs)
         return wrapped
     return decorator
+
 
 class SequencePlotMixin:
     __slots__ = ()
@@ -34,6 +40,7 @@ class SequencePlotMixin:
             an element is greather than <fmax> or less than <fmin>,
             the element will not be displayed.
             '''
+        np, mpl, plt, sns = import_plot_libs()
 
         # Thanks to
         # https://stackoverflow.com/questions/33179122/seaborn-countplot-with-frequencies
