@@ -90,6 +90,9 @@ def as_bytes(raw, encoding='ascii', mutable=False):
             True
 
         '''
+    if hasattr(raw, 'read'):
+        raw = raw.read()
+
     # see a single byte as a byte string
     #   as_bytes(7) -> b'\x07'
     if isinstance(raw, int):
@@ -139,9 +142,15 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
     return MutableByteString(raw) if mutable else ImmutableByteString(raw)
 
-def load_bytes(fp, mode='rb', **k):
-    ''' Open a file <fp> with mode <mode> (read - binary by default)
-        and read and load each line as a ByteString.
+def load_bytes(fp, mode='rt', multiline=True, **k):
+    r'''Open a file <fp> with mode <mode> (read - text by default)
+        and load a single or multiple ByteStrings
+
+        If <multiline> is True (the default) read, strip and load
+        each line as a ByteString.
+
+        If <multiline> is False, treat the file as a single line
+        without any stripping.
 
         How each line should be processed can be controlled by the
         same parameters that can be used with as_bytes.
@@ -150,11 +159,18 @@ def load_bytes(fp, mode='rb', **k):
 
         If <fp> is not a string, it is assumed that it is a file
         already open (and <mode> is ignored).
+
+        Return an iterator of ByteStrings if <multiline> is True,
+        a single ByteString object if not.
+
         '''
     if isinstance(fp, str):
         fp = open(fp, mode)
 
-    return (as_bytes(line.strip(), **k) for line in fp)
+    if multiline:
+        return (as_bytes(line.strip(), **k) for line in fp)
+    else:
+        return as_bytes(fp.read(), **k)
 
 # alias
 B = as_bytes
