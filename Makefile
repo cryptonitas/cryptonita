@@ -16,6 +16,7 @@ deps:
 
 test: clean_test
 	@byexample -l python -j 2 -- `find cryptonita -name "*.py"`
+	@byexample -l python -j 2 -- `find docs -name "*.md"`
 	@make -s clean_test
 
 dist:
