@@ -5,7 +5,7 @@ import numpy as np
 
 '''
 >>> from cryptonita.conv import B           # byexample: +timeout=10
->>> from cryptonita.conv import as_bytes, transpose, uniform_length, repack
+>>> from cryptonita.conv import as_bytes, transpose, uniform_length, repack, join_bytestrings
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
@@ -142,35 +142,24 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
     return MutableByteString(raw) if mutable else ImmutableByteString(raw)
 
-def load_bytes(fp, mode='rt', multiline=True, **k):
+def load_bytes(fp, mode='rt', **k):
     r'''Open a file <fp> with mode <mode> (read - text by default)
-        and load a single or multiple ByteStrings
+        and load a sequence of ByteStrings, one per line.
 
-        If <multiline> is True (the default) read, strip and load
-        each line as a ByteString.
-
-        If <multiline> is False, treat the file as a single line
-        without any stripping.
-
-        How each line should be processed can be controlled by the
+        During the reading, each line is stripped and how each ByteStrings
+        is built from each line is controlled by the
         same parameters that can be used with as_bytes.
-        The keyword parameters of load_bytes are passed to
-        as_bytes directly.
 
         If <fp> is not a string, it is assumed that it is a file
         already open (and <mode> is ignored).
 
-        Return an iterator of ByteStrings if <multiline> is True,
-        a single ByteString object if not.
+        Return an iterator of ByteStrings.
 
         '''
     if isinstance(fp, str):
         fp = open(fp, mode)
 
-    if multiline:
-        return (as_bytes(line.strip(), **k) for line in fp)
-    else:
-        return as_bytes(fp.read(), **k)
+    return (as_bytes(line.strip(), **k) for line in fp)
 
 # alias
 B = as_bytes
@@ -321,3 +310,13 @@ def repack(iterable, ifmt, ofmt):
         for o in struct.unpack(ofmt, struct.pack(ifmt, i)):
             yield o
 
+def join_bytestrings(*seqs):
+    ''' Join the sequences of byte strings.
+
+        >>> seqs = [B('ABC'), B('DE')]
+        >>> join_bytestrings(seqs)
+        'ABCDE'
+        '''
+    return B('').join(*seqs)
+
+B.join = join_bytestrings
