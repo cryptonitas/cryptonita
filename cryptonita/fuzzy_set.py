@@ -371,6 +371,10 @@ class FuzzySet(dict, collections.Set):
     def sorted_values(self, reverse=True):
         return (v for _, v in self.sorted_items(reverse))
 
+    @staticmethod
+    def join(iterable, cut_off, j):
+        return join_fuzzy_sets(iterable, cut_off, j)
+
 def join_fuzzy_sets(iterable, cut_off, j):
     r'''
         Join the given fuzzy sets and return a single one.

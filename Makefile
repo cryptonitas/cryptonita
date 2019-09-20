@@ -15,8 +15,8 @@ deps:
 	pip install wheel twine
 
 test: clean_test
-	@byexample -l python -j 2 -- `find cryptonita -name "*.py"`
-	@byexample -l python -j 2 -- `find docs -name "*.md"`
+	@byexample -l python -j 2 --timeout 6 -- `find cryptonita -name "*.py"`
+	@byexample -l python -j 2 --timeout 6 -- `find docs -name "*.md"`
 	@make -s clean_test
 
 dist:
