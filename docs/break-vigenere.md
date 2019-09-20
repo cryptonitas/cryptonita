@@ -1,110 +1,154 @@
-# Breaking a repeated key / Vigenere cipher
+# Hands on! Vigenere cipher
 
 A [Vigenere cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher)
 consists in xor a key with the plaintext.
-In general, a plaintext is much longer than the key so the same
-key is used again until the plaintext is fully encrypted.
 
-This cipher was consider secure a long time ago and it is well known
-that it can be broken.
+## Implementing a Vigenere cipher
 
-However, despite of this, modern home-made ciphers and even standard ciphers
-when used incorrectly can be seen as complex variants of a Vigenere cipher.
-
-The vulnerability resides in that the key is not a one-time pad but it is
-used several times.
-
-Let's break it using [cryptonita](https://pypi.org/project/cryptonita/).
-
-## Load the ciphertext
-
-For this write-up we are going to use a ciphertext taken from the
-[Matasano Challenge](https://cryptopals.com/sets/1/challenges/6), now
-known as the Cryptopals Challenge.
+First, we load our plaintext
 
 ```python
->>> ciphertext = open('./test/ds/vigenere-ctext', 'rb').read()
+>>> from cryptonita import B            # byexample: +timeout=10
+>>> ptext = B(open('./test/ds/plaintext', 'rt').read())
+
+>>> ptext[:29]
+'Now that the party is jumping'
 ```
 
 The unit of work of ``cryptonita`` is the ``ImmutableByteString``:
 a class to represent an immutable sequence of bytes.
 
-The ``B`` function is a shortcut to take Python ``unicode`` and ``bytes``
-and convert them into ``ImmutableByteString``.
+``B`` is a shortcut to create ``ImmutableByteString``s that accepts a
+very large range of inputs doing any conversion to bytes behind the scenes.
 
-It is quite handy and flexible as it accepts text in base 64 (or other
-bases), iterable of integers and raw bytes.
+REF HERE        
 
-In our case, the ciphertext can be decoded with just one call:
+Now, let's pick a *very* secure key
 
 ```python
->>> from cryptonita import B            # byexample: +timeout=10
-
->>> ciphertext = B(ciphertext, 64)
+>>> key = B('p4ssw0rd!')
 ```
 
-## Guess the length of the key
+A [Vigenere cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher)
+consists in xor the key with the plaintext.
 
-The length of the key used can be arbitrary and it is typically unknown
-to the attacker.
+In general, a plaintext is much longer than the key so the same
+key is *used again* until the plaintext is fully encrypted.
 
-This was consider a security feature but there were develop several
-algorithms to *guess* the length of the key in the past 100 years.
+In [cryptonita](https://pypi.org/project/cryptonita/) an unbound repeated
+string is seen as an *infinite* stream.
 
-Some algorithms and heuristics are
-the Kasiski Test,
-the [Hamming Distance](https://en.wikipedia.org/wiki/Hamming_distance)
-and the [Index of Coincidences](https://en.wikipedia.org/wiki/Index_of_coincidence).
+```python
+>>> kstream = key.inf()     # the key stream
+```
 
-These can be found in the ``scoring`` module and
-the *guess* algorithm in the ``attacks`` module:
+Then, the encrypted text is just the xor of those two pieces
+
+```python
+>>> ctext = ptext ^ kstream
+>>> ctext.encode(64)[:32]
+'PlsEUwNYExABBFwWUwdRABBYUF0AUx1F'
+```
+
+Yes, ``cryptonita`` not only can load and convert several
+types of strings into a ``ImmutableByteString``
+but it also can do the opposite and ``encode`` the bytes into
+different forms, like base 64.
+
+REF about XOR       
+REF about encode         
+
+## Detecting Vigenere ciphertexts
+
+Among other things, the [Vigenere cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher)
+is insecure because the ciphertext *does not look* random.
+
+Consider the following random strings where one is not random but a
+ciphertext product of the Vigenere cipher.
+
+```python
+>>> from cryptonita import load_bytes
+>>> rstrings = list(load_bytes('./test/ds/randoms', encoding=16))
+```
+
+``load_bytes``, as you may guess, loads multiple strings into
+``ImmutableByteString``s, one per line, decoding them using a base 16 decoder.
+
+We then can calculate the [Index of Coincidence](https://en.wikipedia.org/wiki/Index_of_coincidence):
+higher values means less random.
+
+```python
+>>> from cryptonita.scoring import icoincidences
+>>> ic, ix = max((icoincidences(c), i) for i, c in enumerate(rstrings))
+
+>>> ic, ix
+(0.03218<...>, 170)
+```
+
+And yes, that one is the correct one:
+
+```python
+>>> ctext = rstrings[ix]
+>>> ctext ^ B('ice').inf()
+'Now that the party is jumping\n'
+```
+
+In ``cryptonita.scoring`` there are more *scoring* functions. Some
+represents probabilities, which evaluate between 0 and 1, like
+``icoincidences``; others are free form.
+See their documentation.
+
+## Breaking the Vigenere cipher
+
+Not only we can distinguish from a random stream but also we can
+recover the plaintext and the key.
+
+Our first objective is *guess* the length of the key
 
 ```python
 >>> from cryptonita.scoring import key_length_by_ic
 >>> from cryptonita.attacks import guess_key_length
-```
 
-And putting all this together:
+>>> ctext = B(open('./test/ds/vigenere-ctext'), 64)
 
-```python
 >>> gklength = guess_key_length(
-...                         ciphertext,
-...                         length_space=40,
+...                         ctext,
+...                         length_space=range(16, 40),
 ...                         score_func=key_length_by_ic,
 ...                         min_score=0.02
 ...                         )
 ```
 
-``guess_key_length`` received the length space where to search: it can
-be a list of possible lengths or just a number in which case ``guess_key_length``
-will try all the possible lengths from 1 to the given number.
-
-Each length is then evaluated using ``score_func`` and all the lengths with
-a score greater than ``min_score`` are returned.
-
-``guess_key_length`` returns a *guess*.
+``guess_key_length`` receives the length space where to search and
+for each length, it evaluates ``score_func`` to score each guess
+and returns them as a [Fuzzy Set](https://en.wikipedia.org/wiki/Fuzzy_set).
 
 A *guess* in ``cryptonita`` is an object that does not represent a single
-value or answer but a *set of possible values or answers*.
+value or answer but a *set of possible values or answers* and it is
+represented using [Fuzzy Sets](https://en.wikipedia.org/wiki/Fuzzy_set).
 
-This object is implemented using a
-[Fuzzy Set](https://en.wikipedia.org/wiki/Fuzzy_set).
+Because most of the ``attacks`` are statistical, number of possible
+answers may grow a lot. The ``min_score`` parameter put a lower limit
+and guesses less likely (or less scored) are dropped.
+
+We can ask, among other things, how many guesses do we have and which
+is the most likely:
 
 ```python
 >>> len(gklength)
-12
+8
 
 >>> klength = gklength.most_likely()
 >>> klength
 29
 ```
 
-## Repeating single-byte key
+### Repeating single-byte key
 
 We know that each block of 29 bytes is xored with the same key.
 
 ```python
->>> cblocks = ciphertext.nblocks(n=klength)
+>>> cblocks = ctext.nblocks(n=klength)
 ```
 
 More over, the first byte of all of those blocks is xored with the same
@@ -129,7 +173,7 @@ shorter than 29 bytes.
 
 Now each block is encrypted with the same byte key.
 
-## Frequency attack
+### Frequency attack
 
 To perform a *frequency attack* we need to know something about the plaintext.
 
@@ -156,10 +200,7 @@ the model.
 >>> ntop_most_common_cbytes = 1
 ```
 
-The result is a *guess* of the byte key.
-
-Repeating this for each ciphertext block, we have a guess per byte key,
-29 guesses in total.
+We attack one byte at time:
 
 ```python
 >>> from cryptonita.attacks import freq_attack
@@ -171,6 +212,21 @@ Repeating this for each ciphertext block, we have a guess per byte key,
 >>> len(gbkeys)
 29
 ```
+
+So we have 29 guesses. How many possible keys do we have? We need to
+combine all the byte guessed:
+
+
+```python
+>>> from cryptonita.fuzzy_set import len_join_fuzzy_sets
+
+>>> len_join_fuzzy_sets(gbkeys)
+201538126434611150798503956371773
+```
+
+How! that's a lot! But still much less than 256^29 which is greater than
+grams of ordinary mass in the
+[observable universe](https://en.wikipedia.org/wiki/Observable_universe).
 
 ## Brute forcing
 
@@ -204,6 +260,13 @@ keys, score the results and drop the lowers.
 Like ``guess_key_length``, ``brute_force`` receives a score function, a key space
 and a minimum score.
 
+Now we have a much smaller search space to work on:
+
+```python
+>>> len_join_fuzzy_sets(gbkeys)
+96
+```
+
 ## Key stream
 
 Now we *join* each byte guess to form a guess of the final key stream.
@@ -215,10 +278,6 @@ Now we *join* each byte guess to form a guess of the final key stream.
 >>> len(gkstream)
 96
 ```
-
-``96`` is a really small number compared with the whole key space ``2^(8*29)``
-with more keys than grams of ordinary mass in the
-[observable universe](https://en.wikipedia.org/wiki/Observable_universe).
 
 Let's see the top 2 most likely key streams:
 
@@ -233,7 +292,7 @@ Picking the most likely as the key stream we decrypt the ciphertext.
 ```python
 >>> kstream = sorted(gkstream)[1]
 
->>> ciphertext ^ kstream.inf()
+>>> ctext ^ kstream.inf()
 <...>I'm back and I'm ringin' the bell<...>Play that funky music<...>
 ```
 
@@ -246,5 +305,4 @@ But little is explained in how to break it in an *automated* fashion.
 
 [cryptonita](https://pypi.org/project/cryptonita/)
 is not magical and a little of brain is required from you, but it is
-a quite useful swiss army knife for break it and for cryptanalysis
-in general.
+a quite useful swiss army knife for breaking crypto.
