@@ -65,6 +65,12 @@ def as_bytes(raw, encoding='ascii', mutable=False):
             >>> as_bytes(b'020b', encoding=16)
             '\x02\x0b'
 
+         - for convenience, spaces and newlines are ignored when <encoding>
+         is 16, 64, ...
+
+            >>> as_bytes(b'02 0b\n03', encoding=16)
+            '\x02\x0b\x03'
+
          - we can do the same with a text (str). In this case we assume that
          the encoding to map the unicode to the raw bytes is 'ascii',
          then we use <encoding> to map it to its final state
@@ -136,6 +142,7 @@ def as_bytes(raw, encoding='ascii', mutable=False):
     # overloaded meaning of encoding, the new raw bytes are encoded
     # using base 16 (64, other) and we want to decode them.
     if isinstance(encoding, int):
+        raw = raw.replace(b' ', b'').replace(b'\n', b'')
         if encoding == 16:
             raw = raw.upper()
         raw = getattr(base64, 'b%idecode' % encoding)(raw)
