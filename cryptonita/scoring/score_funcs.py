@@ -222,7 +222,7 @@ def yes_no_score(m, yes_prob=0.5):
 
     return 1 - stats.binom_test(sucessess, n=bits)
 
-def icoincidences(seq):
+def icoincidences(seq, ref=None):
     r'''
         Take the sequence <seq> that can be:
          - a ByteString
@@ -233,6 +233,14 @@ def icoincidences(seq):
         For the given sequence see how many items are repeated:
         count the coincidences; higher
         values means that the <seq> is less random. [1]
+
+        Mathematically,
+            Sum for all i { (ni * (ni-1)) / (N * (N-1)) }
+
+        where <ni> is the count of items <i> and <N> is the count of all the
+        items seen.
+        The result is a number between 0 (uniform random) and 1 (totally biased
+        not random at all).
 
         For example, in the given file are 327 random strings. One of them
         is actually a message encrypted by doing a xor with a key of just 1 byte.
@@ -256,6 +264,45 @@ def icoincidences(seq):
         >>> ciphertexts[170] ^ key.inf()
         'Now that the party is jumping\n'
 
+        If a second sequence <ref> is provided, <icoincidences> will
+        return a *relative* Index of Coincidence.
+
+        Mathematically,
+            icoincidences(seq1, ref) = icoincidences(seq1) / icoincidences(ref)
+
+        The second sequence is known as the "expected" sequence used to compare
+        the first one against the second one.
+
+        A value of 1 means that both sequences look similar while numbers far from
+        it mean the opposite.
+
+        >>> icoincidences(ciphertexts[43], ciphertexts[12])
+        0.25
+
+        If instead of a second sequence it is provided a single value <ref>, the
+        it returns also a *relative* Index of Coincidence:
+
+            icoincidences(seq1, ref) = icoincidences(seq1) / ref
+
+        Typically <ref> comes from a theorical "expected" value (1/256 for
+        a truly random sequence of bytes; 1/26 (0.0385) for a truly random
+        sequence of letters of a 26-letters alphabet like the used in English)
+
+        >>> 1/icoincidences(ciphertexts[12], 1/256)
+        0.424<...>
+
+        >>> icoincidences(ciphertexts[43], 1/256)
+        0.588<...>
+
+        >>> 1/icoincidences(ciphertexts[170], 1/256)
+        0.0849<...>
+
+        Note: because the relative IC can be any positive number, to
+        compare those three I inverted the result if the number was greater
+        than 1 making all of them between 0 and 1 and comparable.
+        Notice how the relative IC of the 170th ciphertext is far from 1
+        (random).
+
         References:
 
         [1] Index of coincidence: https://en.wikipedia.org/wiki/Index_of_coincidence
@@ -267,7 +314,19 @@ def icoincidences(seq):
     # - it is just a scalar factor to separate one value from the other but
     #   this is a human invention, the machine has no problem to see the
     #   difference of 0.0001 and 0.000011.
-    return sum(f * (f-1) for f in freqs) / (len(seq) * (len(seq) - 1))
+    ic = sum(f * (f-1) for f in freqs) / (len(seq) * (len(seq) - 1))
+
+    if hasattr(ref, 'freq'):
+        ref = icoincidences(ref)
+
+    if ref is not None:
+        return ic / ref
+
+    return ic
+
+def ic_score(m, ref=None):
+    ic = icoincidences(m, ref)
+    return ic if ic <= 1 else 1/ic
 
 
 def key_length_by_hamming_distance(length, ciphertext):
