@@ -49,7 +49,7 @@ class SequenceMixin:
 
                 >>> c = a ^ b
                 >>> c.encode(16)
-                '746865206B696420646F6E277420706C6179'
+                b'746865206B696420646F6E277420706C6179'
 
             If the two strings have different lengths, the operation is undefined.
             Should we repeat the shorter string to match the length of the other
@@ -73,8 +73,8 @@ class SequenceMixin:
                 >>> key = B("ICE")
 
                 >>> (plaintext ^ key.inf()).encode(16)
-                ('0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A'
-                 '282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F')
+                (b'0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272A'
+                 b'282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F')
 
         '''
         if not isinstance(other, InfiniteStream):
@@ -206,7 +206,7 @@ class SequenceMixin:
             Encode the byte string using base <x> (base 16, base 64, ...)
 
                 >>> B('\x01\x02').encode(16)
-                '0102'
+                b'0102'
 
             Combine this with the decoding capabilities of B (conv.as_bytes)
             to create a (little inefficient) conversor between bases:
@@ -215,7 +215,7 @@ class SequenceMixin:
                 ...       b"261696e206c696b65206120706f69736f6e6f" + \
                 ...       b"7573206d757368726f6f6d"
                 >>> B(b16, encoding=16).encode(64)
-                'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t'
+                b'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t'
 
             Use decode to build a str object from the bytes.
 

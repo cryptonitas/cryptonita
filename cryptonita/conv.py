@@ -294,7 +294,7 @@ def repack(iterable, ifmt, ofmt):
         of bytes in big endian we do:
 
         >>> list(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
-        ['\xaa', '\xbb', '\xcc', '\xdd', '\xa1', '\xb2', '\xc3', '\xd4']
+        [b'\xaa', b'\xbb', b'\xcc', b'\xdd', b'\xa1', b'\xb2', b'\xc3', b'\xd4']
 
         Any input/output formats are valid as long as they have the same
         'size':

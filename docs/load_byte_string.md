@@ -26,7 +26,7 @@ to bytes behind the scenes.
 
 >>> s = B(open('test/ds/one.txt'))
 >>> s.strip()
-'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ=='
+b'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ=='
 ```
 
 For the full list of conversions see
