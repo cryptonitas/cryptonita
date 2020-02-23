@@ -8,17 +8,25 @@ from bisect import bisect_left
 
 from collections import Counter
 
+# References:
+# Automating the Cracking of Simple Ciphers, Matthew C. Berntsen
+
 def as_3ngram_repeated_positions(s):
     ''' Given a string of bytes return a sorted list
         of (ngram, postions) tuples.
 
-        Each tuple consist in a 3-ngram from the byte string
+        Each tuple consists in a 3-ngram from the byte string
         and a list of 2 or more positions where the ngram
         can be found in the original byte string.
 
         >>> s = B(b'ABCDBCDABCDBC')
         >>> as_3ngram_repeated_positions(s)
         [('ABC', [0, 7]), ('BCD', [1, 4, 8]), ('CDB', [2, 9]), ('DBC', [3, 10])]
+
+        For example, ('ABC', [0, 7]) means that the 3-ngram 'ABC' was
+        found at the positions 0 and 7.
+
+        N-grams that are not repeated are not returned.
         '''
     # create a dict that maps a 3-ngram to it position or positions
     # Time/Space O(n)
@@ -84,7 +92,7 @@ def merge_overlaping(ngram_pos_list):
         The idea is that two ngrams G1 and G2 of N bytes at positions
         P1 and P2 can be merged if they share the same suffix/prefix
         (aka G1[1:] == G2[:-1]) *and* are at the same position shifted
-        by on (aka P1 + 1 == P2)
+        by one (aka P1 + 1 == P2)
 
         >>> #       0123456789ABC
         >>> s = B(b'ABCDBCDABCDBC')
@@ -200,8 +208,22 @@ def deltas_from_positions(positions):
 
 def kasiski_test(s):
     '''
+        Return a list of frequencies of gaps between n-grams.
+
         >>> s = B(b'ABCDBCDABCDBC')
         >>> kasiski_test(s)
+        [Counter({7: 4, 3: 1, 4: 1}), Counter({7: 3}), Counter({7: 2}), Counter({7: 1})]
+
+        The first frequencies corresponds to the 3-grams: a gap between
+        two repeated 3-grams of length 7 was found 4 times; of length 3
+        was found onces and of length of 4 was found once.
+
+        The next element in the returned list are the frequencies
+        of the gaps between 4-grams repeated. In this case we have a single
+        gap of length 7 repeated 3 times.
+
+        The next element if for 5-grams, and so on.
+
     '''
     res = []
     l = as_3ngram_repeated_positions(s)
