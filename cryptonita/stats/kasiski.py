@@ -1,6 +1,6 @@
 '''
 >>> from cryptonita.conv import B           # byexample: +timeout=10
->>> from cryptonita.metrics.kasiski import *
+>>> from cryptonita.stats.kasiski import *
 '''
 
 from cryptonita.conv import B
