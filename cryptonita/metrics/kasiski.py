@@ -6,185 +6,176 @@
 from cryptonita.conv import B
 from bisect import bisect_left
 
+from operator import itemgetter
+from collections import defaultdict
+import itertools
+
 from collections import Counter
 
 # References:
 # Automating the Cracking of Simple Ciphers, Matthew C. Berntsen
 
 def as_3ngram_repeated_positions(s):
-    ''' Given a string of bytes return a sorted list
-        of (ngram, postions) tuples.
-
-        Each tuple consists in a 3-ngram from the byte string
-        and a list of 2 or more positions where the ngram
-        can be found in the original byte string.
+    ''' Given a string of bytes returns a sorted list of (position, id) tuples.
 
         >>> s = B(b'ABCDBCDABCDBC')
-        >>> as_3ngram_repeated_positions(s)
-        [('ABC', [0, 7]), ('BCD', [1, 4, 8]), ('CDB', [2, 9]), ('DBC', [3, 10])]
+        >>> pos_sorted = as_3ngram_repeated_positions(s)
 
-        For example, ('ABC', [0, 7]) means that the 3-ngram 'ABC' was
-        found at the positions 0 and 7.
+        The sorted list is a list of tuples which map the position
+        of each non-unique ngram and the ngram's id, all sorted by
+        position:
 
-        N-grams that are not repeated are not returned.
-        '''
-    # create a dict that maps a 3-ngram to it position or positions
-    # Time/Space O(n)
-    pos_by_ngram = {}
-    for ix, ngram in enumerate(s.ngrams(3)):
-        try:
-            pos_by_ngram[ngram].append(ix)
-        except KeyError:
-            pos_by_ngram[ngram] = [ix]
+        >>> pos_sorted
+        [(0, 1), (1, 2), (2, 3), (3, 4), (4, 2), (7, 1), (8, 2), (9, 3), (10, 4)]
 
-    # filter out any unique ngram (leave only the ngrams
-    # that have 2 or more positions)
-    # Time/Space O(n)
-    tmp = {}
-    for ngram, positions in pos_by_ngram.items():
-        if len(positions) >= 2:
-            tmp[ngram] = positions
+        Storing the ngrams by value (substrings) is expensive. Instead we
+        use an unique identifier for each ngram (and integer).
 
-    pos_by_ngram = tmp
+        If two positions have the same id, it means that both point to the
+        same ngram:
 
-    # same but as a sorted list: O(n logn)
-    return list(sorted(pos_by_ngram.items()))
+        >>> [p for p, id in pos_sorted if id == 4]
+        [3, 10]
 
-def ordered_positions_intersections(a, b):
-    ''' Given two ordered list <a> and <b>, return
-        an ordered list with the numbers that both
-        list have in common.
+        >>> s[3:3+3], s[10:10+3]
+        ('DBC', 'DBC')
 
-        >>> ordered_positions_intersections([1, 3, 4, 5], [2, 3, 5, 6])
-        [3, 5]
-
-        >>> ordered_positions_intersections([1, 4, 5], [2, 3, 5, 6])
-        [5]
-
-        >>> ordered_positions_intersections([1, 5, 9], [2, 3, 5, 6])
-        [5]
-
-        >>> ordered_positions_intersections([1, 9], [2, 3, 5, 6])
-        []
         '''
 
-    i, j = 0, 0
-    res = []
-    while i < len(a) and j < len(b):
-        if a[i] == b[j]:
-            res.append(a[i])
-            i += 1
-            j += 1
-        elif a[i] < b[j]:
-            i += 1
-        else:
-            j += 1
+    # Map each ngram to its own identifier and add to the pos_sorted list
+    # the positions and ids in order.
+    # During the scanning, count how many ngrams we see of each ngram type.
+    #
+    # Assuming a O(1) hash implementation, this is Time/Space O(n)
+    id_of_ngram = {0:0}
+    pos_sorted = []
+    ngram_cnt_by_id = defaultdict(int, [(0,0)]) # id==0 is special with a count of 0 always
+    for pos, ngram in enumerate(s.ngrams(3)):
+        id = id_of_ngram.setdefault(ngram, len(id_of_ngram))
 
-    return res
+        pos_sorted.append((pos, id))
+        ngram_cnt_by_id[id] += 1        # because the ids goes from 1 to N we could use an array
 
-def merge_overlaping(ngram_pos_list):
+    # Filter any unique ngram (count of 0)
+    # This is Time/Space O(n)
+    pos_sorted = [(p, id) for p, id in pos_sorted if ngram_cnt_by_id[id] > 1]
+
+    return pos_sorted
+
+def merge_overlaping(pos_sorted):
     '''
-        Given a ordered list of tuples (ngram, positions)
-        where all the ngrams have N bytes, create another
-        ordered list of the same tuples where the ngrams
-        are of N+1 bytes.
+        Given a list of positions and ngram identities sorted
+        by the position (see as_3ngram_repeated_positions)
+        where the ngrams are of length N, create another
+        pos_sorted list for ngrams of length N+1
+        discarding any unique ngram (we are interested in the repeated ones)
 
         The idea is that two ngrams G1 and G2 of N bytes at positions
-        P1 and P2 can be merged if they share the same suffix/prefix
-        (aka G1[1:] == G2[:-1]) *and* are at the same position shifted
-        by one (aka P1 + 1 == P2)
+        P1 and P2 can be merged if they satisfy P1 + 1 == P2 (that does
+        not imply that the ngram built is repeated, but it is a precondition)
 
         >>> #       0123456789ABC
         >>> s = B(b'ABCDBCDABCDBC')
-        >>> l3 = as_3ngram_repeated_positions(s)
-        >>> l3
-        [('ABC', [0, 7]), ('BCD', [1, 4, 8]), ('CDB', [2, 9]), ('DBC', [3, 10])]
+        >>> l3_positions = as_3ngram_repeated_positions(s)
+        >>> [p for p, _ in l3_positions]
+        [0, 1, 2, 3, 4, 7, 8, 9, 10]
 
-        >>> l4 = merge_overlaping(l3)
-        >>> l4
-        [('ABCD', [0, 7]), ('BCDB', [1, 8]), ('CDBC', [2, 9])]
+        The result can be interpreted as at the positions 0 to 10 except 5 and 6
+        there are a 3-ngram that are repeated.
 
-        >>> l5 = merge_overlaping(l4)
-        >>> l5
-        [('ABCDB', [0, 7]), ('BCDBC', [1, 8])]
+        >>> l4_positions = merge_overlaping(l3_positions)
+        >>> [p for p, _ in l4_positions]
+        [0, 1, 2, 7, 8, 9]
 
-        >>> l6 = merge_overlaping(l5)
-        >>> l6
-        [('ABCDBC', [0, 7])]
+        Now, the positions were are 4-ngrams repeated is smaller: 0 to 2
+        and 7 to 9.
 
-        >>> l7 = merge_overlaping(l6)
-        >>> l7
+        >>> l5_positions = merge_overlaping(l4_positions)
+        >>> [p for p, _ in l5_positions]
+        [0, 1, 7, 8]
+
+        If you want to recover the ngrams you just need
+        to use the positions to get the substrings
+
+        >>> [s[p:p+5] for p, _ in l5_positions]
+        ['ABCDB', 'BCDBC', 'ABCDB', 'BCDBC']
+
+        If we print the ngrams' identities we will see two
+        numbers: one for ABCDB and the other for BCDBC:
+
+        >>> [id for _, id in l5_positions]
+        [1, 2, 1, 2]
+
+        Continuing with the merging:
+
+        >>> l6_positions = merge_overlaping(l5_positions)
+        >>> [p for p, _ in l6_positions]
+        [0, 7]
+
+        >>> l7_positions = merge_overlaping(l6_positions)
+        >>> l7_positions
+        []
+
+        >>> s = B(b'ABCDxABCExBCDyBCE')
+        >>> l3_positions = as_3ngram_repeated_positions(s)
+        >>> l4_positions = merge_overlaping(l3_positions)
+        >>> [p for p, _ in l4_positions]
         []
         '''
-    res = []
-    for target in ngram_pos_list:
-        tngram, tpositions = target
 
-        # if our target is ABC at the positions 0, 4, 8
-        # we want to find all the ngrams that have as prefix
-        # the BC suffix: BC0, BC1, BC2, ...
-        # if those ngrams exist and are in a +1 positions respect
-        # the positions of our target then it means that those
-        # share the same space and therefore can be merged into
-        # ngrams larger (they overlap)
-        #
-        #  initial: ABC at 0, BCD at 1, BCD at 8
-        #
-        #  target = ABC, prefix = BC, position+1 = 0+1
-        #
-        #  does exist BC0? no
-        #  does exist BC1? no
-        #        :::
-        #  does exist BCD? yes, at positions 1 and 8
-        #   does it at the 1 position? yes,
-        #       then the ABC at the position 0 and the BCD
-        #       at the position 1 are sharing the same place
-        #       there is an ABCD at the position 0
+    # For each position P1 see if there is a P2 such as P1 + 1 == P2.
+    # That would mean that in a P1 we have a ngram G1 of length N and
+    # in P2 we have another ngram G2 of length N and both share N-1 bytes.
+    # In particular, G1[1:] == G2[:-1].
+    # This means that in P1 we have a ngram of length N+1 which value
+    # is G1 + G2[-1]  (or G1[0] + G2)
+    # Because G1 and G2 are ngrams that repeat, the new ngram G1 + G2[-1]
+    # *may* be repeated: the algorithm produces false positives
+    #
+    # If for a position P1 we don't find such P2, we mark it to be deleted
+    # because we didn't find any ngram of N+1 in P1. We can be *sure*
+    # that a N+1 ngram will not exist: the algorithm does not produce
+    # false negatives.
+    #
+    # This is a Time/Space O(n)
+    id_of_ngram = {0:0}
+    ngram_cnt_by_id = defaultdict(int, [(0,0)])
+    K = len(pos_sorted) // 2
+    for i in range(len(pos_sorted)-1):
+        cur, id  = pos_sorted[i]
+        nex, id2 = pos_sorted[i+1]
 
-        tpositions_plus_1 = [p+1 for p in tpositions]
-        prefix = tngram[1:]
+        if cur + 1 != nex:
+            pos_sorted[i] = (0, 0) # delete later (index 0 is special)
+        else:
+            # instead of building the ngram from G1 and G2 we use
+            # G1's and G2's identifiers as a temporally ngram representation
+            # to map the new larger ngram to an new identifier
+            # Note how (id, id2) means that the ngram was built from G1 and G2
+            # *in that order* (G2 and G1 gives another ngram of course so
+            # the (id, id2) tuple order is important)
+            id = id_of_ngram.setdefault((id, id2), len(id_of_ngram))
 
-        # search for candidates: if our target is ABC, the prefix
-        # is BC and the candidates are all the 3-ngrams that
-        # have a 2-ngram prefix of BC. In other words BC0, BC1, BC2
-        # and so on are candidates
-        first = prefix + B(b'\x00')    # literally BCD0
+            pos_sorted[i] = (cur, id)   # new ngram
+            ngram_cnt_by_id[id] += 1
 
-        # first candidate's index, if any
-        ix = bisect_left(ngram_pos_list, (first, []))
-        L = len(ngram_pos_list)
-        while ix < L:
-            candidate = ngram_pos_list[ix]
-            if not candidate[0].startswith(prefix):
-                # this is not a candidate and because the list
-                # is sorted this means that we ran out of candidates
-                break
+    # the last position P1 always is deleted because there is
+    # not P2 such P1 + 1 == P2 *and* P1 < P2 (basically because there
+    # are no more positions after P1)
+    pos_sorted[-1] = (0, 0)
 
-            # check the positions of our target+1 and the candidate's one
-            # and see if there is a coincidence
-            shared_positions = ordered_positions_intersections(tpositions_plus_1, candidate[1])
+    # filter any position marked to be deleted (their index is 0)
+    # or if it is the position to a ngram that appears once.
+    # Time/Space O(n)
+    pos_sorted = [(p, id) for p, id in pos_sorted if ngram_cnt_by_id[id] > 1]
 
-            if len(shared_positions) <= 1:
-                # the ngrams do not overlap, continue
-                break
+    return pos_sorted
 
-            # found!
-            merged_ngram = tngram + candidate[0][-1:]
-            assert(len(merged_ngram) == len(tngram) + 1)
-
-            merged_at_positions = [p-1 for p in shared_positions]
-
-            # because we are iteration over ngram_pos_list that it is sorted
-            # our result list will stay sorted
-            res.append((merged_ngram, merged_at_positions))
-
-            ix += 1
-
-    return res
-
-def deltas_from_positions(positions):
+def deltas_from_positions(positions, is_sorted=True):
     '''
-        Return the difference between the positions.
+        Return the difference between the positions in any combination.
+        If the input is sorted, the deltas returned will be always
+        positive.
 
         >>> deltas_from_positions([0, 7])
         [7]
@@ -194,17 +185,27 @@ def deltas_from_positions(positions):
 
         >>> deltas_from_positions([1, 4, 7, 11])
         [3, 6, 10, 3, 7, 4]
+
+        If the input is not sorted, the delta will contain negative
+        values. Pass is_sorted=False to notify about this and force
+        the values to be positive.
+
+        >>> deltas_from_positions([4, 7, 1, 11], is_sorted=False)
+        [3, 3, 7, 6, 4, 10]
+
     '''
-    assert len(positions) >= 2
-
-    res = []
-    for i in range(len(positions)-1):
-        ref = positions[i]
-        for j in range(i+1, len(positions)):
-            res.append(positions[j] - ref)
-
-    return res
-
+    # Python itertools' combinations function returns pairs maintaining
+    # the same order that the input has. So if the input is sorted
+    # (x1, x2, x3, ...) such x1 <= x2 <= x3 <= ..., then the output
+    # will be ((x1, x2), (x1, x3), ... (x2, x3), (x2, x4) ...) so
+    # the first value of each tuple always equal or less than the second
+    # item so the difference is always positive.
+    #
+    # Time O(n^2)
+    if is_sorted:
+        return [y-x for x, y in itertools.combinations(positions, 2)]
+    else:
+        return [abs(y-x) for x, y in itertools.combinations(positions, 2)]
 
 def kasiski_test(s):
     '''
@@ -216,24 +217,46 @@ def kasiski_test(s):
 
         The first frequencies corresponds to the 3-grams: a gap between
         two repeated 3-grams of length 7 was found 4 times; of length 3
-        was found onces and of length of 4 was found once.
+        was found once and of length of 4 was found once.
 
         The next element in the returned list are the frequencies
         of the gaps between 4-grams repeated. In this case we have a single
         gap of length 7 repeated 3 times.
 
-        The next element if for 5-grams, and so on.
-
+        The next element is for gaps between 5-grams, and so on.
     '''
     res = []
-    l = as_3ngram_repeated_positions(s)
-    while l:
+    pos_sorted = as_3ngram_repeated_positions(s)
+    while pos_sorted:
+        # we sort the positions+ids by id and then we
+        # group the positions by id: each group of positions
+        # will have the same identifier and therefore will belong
+        # to the same ngram.
+        #
+        # Because Python's sorted() algorithm is stable and
+        # the original pos_sorted list is already sorted by position,
+        # the sorted(...) leaves the list sorted by id
+        # *and* secondly sorted by position (within each group)
+        #
+        # This serves for two things:
+        #   - groupby requires the input to be sorted by the key to group by
+        #   - deltas_from_positions returns positive deltas if the input
+        #     (the positions) are sorted
+        #
+        # O(n log n)
+        pos_grouped = sorted(pos_sorted, key=itemgetter(1))
+        pos_grouped = itertools.groupby(pos_grouped, key=itemgetter(1))
+
+        # for each group (ngram) compute the differences between
+        # its positions or "gaps"
+        # This is O(n^2)
         delta_stats = Counter()
-        for _, positions in l:
+        for _, tmp in pos_grouped:
+            positions = (p for p, _ in tmp)
             d = deltas_from_positions(positions)
             delta_stats.update(Counter(d))
 
         res.append(delta_stats)
-        l = merge_overlaping(l)
+        pos_sorted = merge_overlaping(pos_sorted)
 
     return res
