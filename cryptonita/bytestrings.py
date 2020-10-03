@@ -79,31 +79,6 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
     def fhex(self, n=8):
         return super().hex()[:n]
 
-    def __int__(self):
-        ''' See the single byte as an interger.
-
-            >>> int(B(4))
-            4
-
-            This is a shortcut for
-
-            >>> B(4)[0] == int(B(4))
-            True
-
-            Empty byte strings or strings of more than one byte will fail
-
-            >>> int(B(''))
-            Traceback<...>
-            ValueError: The byte string cannot be seen as an integer of 1 byte
-
-            >>> int(B(b'AB'))
-            Traceback<...>
-            ValueError: The byte string cannot be seen as an integer of 1 byte
-        '''
-        if len(self) != 1:
-            raise ValueError("The byte string cannot be seen as an integer of 1 byte")
-
-        return self[0]
 
     def map(self, table, table2=None, fill=-1, delete=set()):
         ''' Translate the byte string replacing each byte
@@ -222,7 +197,7 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
 
         def as_int(obj):
             if isinstance(obj, (bytes, bytearray)):
-                obj = ImmutableByteString(obj)
+                return obj[0]
             return int(obj)
 
         # by default do not delete anything. this is compatible with the
