@@ -47,7 +47,7 @@ Then, the encrypted text is just the xor of those two pieces
 ```python
 >>> ctext = ptext ^ kstream
 >>> ctext.encode(64)[:32]
-'PlsEUwNYExABBFwWUwdRABBYUF0AUx1F'
+b'PlsEUwNYExABBFwWUwdRABBYUF0AUx1F'
 ```
 
 Yes, ``cryptonita`` not only can load and convert several
