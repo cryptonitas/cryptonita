@@ -15,18 +15,24 @@ from collections import Counter
 # References:
 # Automating the Cracking of Simple Ciphers, Matthew C. Berntsen
 
-def as_3ngram_repeated_positions(s):
+def as_ngram_repeated_positions(s, n):
     ''' Given a string of bytes returns a sorted list of (position, id) tuples.
 
         >>> s = B(b'ABCDBCDABCDBC')
-        >>> pos_sorted = as_3ngram_repeated_positions(s)
+        >>> pos_sorted = as_ngram_repeated_positions(s, n=3)
 
         The sorted list is a list of tuples which map the position
         of each non-unique ngram and the ngram's id, all sorted by
-        position:
+        position.
+
+        In this case, the ngram of length 3:
 
         >>> pos_sorted
         [(0, 1), (1, 2), (2, 3), (3, 4), (4, 2), (7, 1), (8, 2), (9, 3), (10, 4)]
+
+        In other words at position 0 there is a non-unique ngram 1, at position
+        1 there is another non-unique ngram 2, .... at position 4 there is
+        the same non-unique ngram 2 found at the position 1, ...
 
         Storing the ngrams by value (substrings) is expensive. Instead we
         use an unique identifier for each ngram (and integer).
@@ -36,6 +42,9 @@ def as_3ngram_repeated_positions(s):
 
         >>> [p for p, id in pos_sorted if id == 4]
         [3, 10]
+
+        In this case if we access to those two positions we will see the same
+        substring:
 
         >>> s[3:3+3], s[10:10+3]
         ('DBC', 'DBC')
@@ -50,7 +59,7 @@ def as_3ngram_repeated_positions(s):
     id_of_ngram = {0:0}
     pos_sorted = []
     ngram_cnt_by_id = defaultdict(int, [(0,0)]) # id==0 is special with a count of 0 always
-    for pos, ngram in enumerate(s.ngrams(3)):
+    for pos, ngram in enumerate(s.ngrams(n)):
         id = id_of_ngram.setdefault(ngram, len(id_of_ngram))
 
         pos_sorted.append((pos, id))
@@ -65,7 +74,7 @@ def as_3ngram_repeated_positions(s):
 def merge_overlaping(pos_sorted):
     '''
         Given a list of positions and ngram identities sorted
-        by the position (see as_3ngram_repeated_positions)
+        by the position (see as_ngram_repeated_positions)
         where the ngrams are of length N, create another
         pos_sorted list for ngrams of length N+1
         discarding any unique ngram (we are interested in the repeated ones)
@@ -74,9 +83,11 @@ def merge_overlaping(pos_sorted):
         P1 and P2 can be merged if they satisfy P1 + 1 == P2 (that does
         not imply that the ngram built is repeated, but it is a precondition)
 
-        >>> #       0123456789ABC
+        >>> #           10--\ 11  /--12
+        >>> # positions      \ | /
+        >>> #       0123456789|||
         >>> s = B(b'ABCDBCDABCDBC')
-        >>> l3_positions = as_3ngram_repeated_positions(s)
+        >>> l3_positions = as_ngram_repeated_positions(s, n=3)
         >>> [p for p, _ in l3_positions]
         [0, 1, 2, 3, 4, 7, 8, 9, 10]
 
@@ -117,7 +128,7 @@ def merge_overlaping(pos_sorted):
         []
 
         >>> s = B(b'ABCDxABCExBCDyBCE')
-        >>> l3_positions = as_3ngram_repeated_positions(s)
+        >>> l3_positions = as_ngram_repeated_positions(s, n=3)
         >>> l4_positions = merge_overlaping(l3_positions)
         >>> [p for p, _ in l4_positions]
         []
@@ -140,7 +151,6 @@ def merge_overlaping(pos_sorted):
     # This is a Time/Space O(n)
     id_of_ngram = {0:0}
     ngram_cnt_by_id = defaultdict(int, [(0,0)])
-    K = len(pos_sorted) // 2
     for i in range(len(pos_sorted)-1):
         cur, id  = pos_sorted[i]
         nex, id2 = pos_sorted[i+1]
@@ -177,11 +187,18 @@ def deltas_from_positions(positions, is_sorted=True):
         If the input is sorted, the deltas returned will be always
         positive.
 
+        This computes the difference between 0 and 7:
+
         >>> deltas_from_positions([0, 7])
         [7]
 
+        This computes the difference between 1 and 4, 1 and 8
+        and 4 and 8:
+
         >>> deltas_from_positions([1, 4, 8])
         [3, 7, 4]
+
+        This is another example:
 
         >>> deltas_from_positions([1, 4, 7, 11])
         [3, 6, 10, 3, 7, 4]
@@ -207,9 +224,9 @@ def deltas_from_positions(positions, is_sorted=True):
     else:
         return [abs(y-x) for x, y in itertools.combinations(positions, 2)]
 
-def kasiski_test(s):
+def kasiski_test(s, start=3, end=None):
     '''
-        Return a list of frequencies of gaps between n-grams.
+        Return a list of frequencies of gaps between repeated n-grams.
 
         >>> s = B(b'ABCDBCDABCDBC')
         >>> kasiski_test(s)
@@ -224,9 +241,18 @@ def kasiski_test(s):
         gap of length 7 repeated 3 times.
 
         The next element is for gaps between 5-grams, and so on.
+
+        A subrange of frequencies can be obtained. For example we could be
+        interested in only the frequencies of the 4-ngrams and 5-ngrams only.
+
+        It is faster to do then the following (<end> is not inclusive):
+
+        >>> kasiski_test(s, start=4, end=6)
+        [Counter({7: 3}), Counter({7: 2})]
     '''
     res = []
-    pos_sorted = as_3ngram_repeated_positions(s)
+    n = start
+    pos_sorted = as_ngram_repeated_positions(s, n=n)
     while pos_sorted:
         # we sort the positions+ids by id and then we
         # group the positions by id: each group of positions
@@ -257,6 +283,9 @@ def kasiski_test(s):
             delta_stats.update(Counter(d))
 
         res.append(delta_stats)
+        n += 1
+        if end is not None and n >= end:
+            break
         pos_sorted = merge_overlaping(pos_sorted)
 
     return res
