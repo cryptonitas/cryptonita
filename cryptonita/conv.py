@@ -1,4 +1,4 @@
-import base64, bisect, struct
+import base64, bisect, struct, itertools
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 import numpy as np
@@ -171,7 +171,7 @@ def load_bytes(fp, mode='rt', **k):
 # alias
 B = as_bytes
 
-def transpose(sequences):
+def transpose(sequences, allow_holes=False, fill_value=None):
     ''' Given a list of sequences, stack them, see them as a matrix,
         transpose it and return it as another list of sequences.
 
@@ -179,8 +179,19 @@ def transpose(sequences):
             >>> s2 = B('1234')
             >>> s3 = B('9876')
 
+            >>> print(s1, s2, s3, sep='\n')
+            b'ABCD'
+            b'1234'
+            b'9876'
+
             >>> transpose([s1, s2, s3])
             ['A19', 'B28', 'C37', 'D46']
+
+            >>> print(*transpose([s1, s2, s3]), sep='\n')
+            b'A19'
+            b'B28'
+            b'C37'
+            b'D46'
 
         If the lengths are different, it is not possible to transpose
         them because some of the output sequences will have missing bytes:
@@ -188,20 +199,48 @@ def transpose(sequences):
             >>> s2 = s2[:2] # two bytes less
             >>> s3 = s3[:3] # one byte less
 
+            >>> print(s1, s2, s3, sep='\n')
+            b'ABCD'
+            b'12'
+            b'987'
+
             >>> transpose([s1, s2, s3])
             Traceback <...>
             ValueError: Sequences have different length: first sequence has 4 bytes but the 2th has 2.
+
+        Holes are allowed if explicitly said so:
+
+            >>> transpose([s1, s2, s3], allow_holes=True)
+            ['A19', 'B28', 'C7', 'D']
+
+            >>> print(*transpose([s1, s2, s3], allow_holes=True), sep='\n')
+            b'A19'
+            b'B28'
+            b'C7'
+            b'D'
+
+        Fill values are possible too:
+
+            >>> transpose([s1, s2, s3], allow_holes=True, fill_value=b'.'[0])
+            ['A19', 'B28', 'C.7', 'D..']
+
+            >>> print(*transpose([s1, s2, s3], allow_holes=True, fill_value=b'.'[0]), sep='\n')
+            b'A19'
+            b'B28'
+            b'C.7'
+            b'D..'
         '''
 
     l = len(sequences[0])
-    for i, seq in enumerate(sequences, 1):
-        if len(seq) != l:
-            raise ValueError("Sequences have different length: first sequence has %i bytes but the %ith has %i." % (
-                l, i, len(seq)))
+    if not allow_holes:
+        for i, seq in enumerate(sequences, 1):
+            if len(seq) != l:
+                raise ValueError("Sequences have different length: first sequence has %i bytes but the %ith has %i." % (
+                    l, i, len(seq)))
 
     output = []
-    for i in range(l):
-        output.append(B(seq[i] for seq in sequences))
+    for column in itertools.zip_longest(*sequences, fillvalue=fill_value):
+        output.append(B(b for b in column if b is not None))
 
     return output
 
