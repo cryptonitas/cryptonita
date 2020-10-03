@@ -239,6 +239,14 @@ class SequenceMixin:
                 >>> isinstance(B('A').pad(16, 'pkcs#7'), ImmutableByteString)
                 True
 
+            The example above uses a particular scheme named 'pkcs#7' but other
+            schemes are possible.
+
+            Padding with zeros for example:
+
+                >>> B('AAAAAAAAAAAA').pad(16, 'zeros')
+                'AAAAAAAAAAAA\x00\x00\x00\x00'
+
         '''
         if scheme == 'pkcs#7':
             assert n > 0
@@ -247,6 +255,12 @@ class SequenceMixin:
                 npad = n
 
             padding = type(self)([npad]) * npad
+
+        elif scheme == 'zeros':
+            assert n > 0
+            npad = n - (len(self) % n)
+
+            padding = type(self)([0]) * npad
         else:
             raise ValueError("Unknow padding scheme '%s'" % scheme)
 
