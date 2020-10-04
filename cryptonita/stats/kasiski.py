@@ -254,31 +254,26 @@ def kasiski_test(s, start=3, end=None):
     n = start
     pos_sorted = as_ngram_repeated_positions(s, n=n)
     while pos_sorted:
-        # we sort the positions+ids by id and then we
-        # group the positions by id: each group of positions
+        # we group the positions by id: each group of positions
         # will have the same identifier and therefore will belong
         # to the same ngram.
         #
-        # Because Python's sorted() algorithm is stable and
-        # the original pos_sorted list is already sorted by position,
-        # the sorted(...) leaves the list sorted by id
-        # *and* secondly sorted by position (within each group)
+        # The grouping preserves the order of the positions: positions
+        # of the same ngram will stay sorted.
         #
-        # This serves for two things:
-        #   - groupby requires the input to be sorted by the key to group by
-        #   - deltas_from_positions returns positive deltas if the input
-        #     (the positions) are sorted
+        # This makes the compute of deltas easier (see
+        # deltas_from_positions)
         #
-        # O(n log n)
-        pos_grouped = sorted(pos_sorted, key=itemgetter(1))
-        pos_grouped = itertools.groupby(pos_grouped, key=itemgetter(1))
+        # O(n)
+        pos_grouped = defaultdict(list)
+        for pos, id in pos_sorted:
+            pos_grouped[id].append(pos)
 
         # for each group (ngram) compute the differences between
         # its positions or "gaps"
         # This is O(n^2)
         delta_stats = Counter()
-        for _, tmp in pos_grouped:
-            positions = (p for p, _ in tmp)
+        for positions in pos_grouped.values():
             d = deltas_from_positions(positions)
             delta_stats.update(Counter(d))
 
