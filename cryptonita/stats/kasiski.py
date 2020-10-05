@@ -15,7 +15,7 @@ from collections import Counter
 # References:
 # Automating the Cracking of Simple Ciphers, Matthew C. Berntsen
 
-def as_ngram_repeated_positions(s, n):
+def as_ngram_repeated_positions(s, n, allow_overlapping=True):
     ''' Given a string of bytes returns a sorted list of (position, id) tuples.
 
         >>> s = B(b'ABCDBCDABCDBC')
@@ -49,6 +49,26 @@ def as_ngram_repeated_positions(s, n):
         >>> s[3:3+3], s[10:10+3]
         ('DBC', 'DBC')
 
+        By definition of a ngram, we will return overlapping positions:
+
+        >>> s = B(b'ABABABAB')
+        >>> as_ngram_repeated_positions(s, n=4)
+        [(0, 1), (1, 2), (2, 1), (3, 2), (4, 1)]
+
+        Note how the ngram number 1 (ABAB) that was found in the position 0
+        (pair (0,1)) was also found in the position 2 (pair (2,1)).
+
+        Currently NOT supported but it should be possible to filter the ngrams
+        that overlaps with themselves.
+        This may also remove the whole ngrams if the resulting becomes unique.
+
+        In the following example we removed the overlapping ngrams of ABAB
+        and BABA. In the latter the ngram BABA disappeared:
+
+        >>> as_ngram_repeated_positions(s, n=4, allow_overlapping=False)    # byexample: +skip
+        [(0, 1), (4, 1)]
+
+        Again, NOT supported yet.
         '''
 
     # Map each ngram to its own identifier and add to the pos_sorted list
