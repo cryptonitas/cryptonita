@@ -171,12 +171,12 @@ def merge_overlaping(pos_sorted):
     # This is a Time/Space O(n)
     id_of_ngram = {0:0}
     ngram_cnt_by_id = defaultdict(int, [(0,0)])
-    for i in range(len(pos_sorted)-1):
-        cur, id  = pos_sorted[i]
-        nex, id2 = pos_sorted[i+1]
+    for ix, (cur, nex) in enumerate(zip(pos_sorted[:-1], pos_sorted[1:])):
+        pcur, id = cur
+        pnex, id2 = nex
 
-        if cur + 1 != nex:
-            pos_sorted[i] = (0, 0) # delete later (index 0 is special)
+        if pcur + 1 != pnex:
+            pos_sorted[ix] = (0, 0) # delete later (index 0 is special)
         else:
             # instead of building the ngram from G1 and G2 we use
             # G1's and G2's identifiers as a temporally ngram representation
@@ -186,7 +186,7 @@ def merge_overlaping(pos_sorted):
             # the (id, id2) tuple order is important)
             id = id_of_ngram.setdefault((id, id2), len(id_of_ngram))
 
-            pos_sorted[i] = (cur, id)   # new ngram
+            pos_sorted[ix] = (pcur, id)   # new ngram
             ngram_cnt_by_id[id] += 1
 
     # the last position P1 always is deleted because there is
