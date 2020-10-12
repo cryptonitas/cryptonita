@@ -201,56 +201,39 @@ def merge_overlaping(pos_sorted):
 
     return pos_sorted
 
-def deltas_from_positions(positions, is_sorted=True):
+def deltas_from_positions(positions):
     '''
-        Return the difference between the positions in any combination.
+        Return the difference between consecutive positions.
         If the input is sorted, the deltas returned will be always
         positive.
 
         This computes the difference between 0 and 7:
 
-        >>> deltas_from_positions([0, 7])
+        >>> list(deltas_from_positions([0, 7]))
         [7]
 
-        This computes the difference between 1 and 4, 1 and 8
+        This computes the difference between 1 and 4,
         and 4 and 8:
 
-        >>> deltas_from_positions([1, 4, 8])
-        [3, 7, 4]
+        >>> list(deltas_from_positions([1, 4, 8]))
+        [3, 4]
 
         This is another example:
 
-        >>> deltas_from_positions([1, 4, 7, 11])
-        [3, 6, 10, 3, 7, 4]
-
-        If the input is not sorted, the delta will contain negative
-        values. Pass is_sorted=False to notify about this and force
-        the values to be positive.
-
-        >>> deltas_from_positions([4, 7, 1, 11], is_sorted=False)
-        [3, 3, 7, 6, 4, 10]
+        >>> list(deltas_from_positions([1, 4, 7, 11]))
+        [3, 3, 4]
 
     '''
-    # Python itertools' combinations function returns pairs maintaining
-    # the same order that the input has. So if the input is sorted
-    # (x1, x2, x3, ...) such x1 <= x2 <= x3 <= ..., then the output
-    # will be ((x1, x2), (x1, x3), ... (x2, x3), (x2, x4) ...) so
-    # the first value of each tuple always equal or less than the second
-    # item so the difference is always positive.
-    #
-    # Time O(n^2)
-    if is_sorted:
-        return [y-x for x, y in itertools.combinations(positions, 2)]
-    else:
-        return [abs(y-x) for x, y in itertools.combinations(positions, 2)]
+    # Time O(n)
+    return (y-x for x, y in zip(positions[:-1], positions[1:]))
 
-def kasiski_test(s, start=3, end=None):
+def frequency_of_deltas(s, start=3, end=None):
     '''
         Return a list of frequencies of gaps between repeated n-grams.
 
         >>> s = B(b'ABCDBCDABCDBC')
-        >>> kasiski_test(s)
-        [Counter({7: 4, 3: 1, 4: 1}), Counter({7: 3}), Counter({7: 2}), Counter({7: 1})]
+        >>> frequency_of_deltas(s)
+        [Counter({7: 3, 3: 1, 4: 1}), Counter({7: 3}), Counter({7: 2}), Counter({7: 1})]
 
         The first frequencies corresponds to the 3-grams: a gap between
         two repeated 3-grams of length 7 was found 4 times; of length 3
@@ -267,7 +250,7 @@ def kasiski_test(s, start=3, end=None):
 
         It is faster to do then the following (<end> is not inclusive):
 
-        >>> kasiski_test(s, start=4, end=6)
+        >>> frequency_of_deltas(s, start=4, end=6)
         [Counter({7: 3}), Counter({7: 2})]
     '''
     res = []
@@ -291,16 +274,55 @@ def kasiski_test(s, start=3, end=None):
 
         # for each group (ngram) compute the differences between
         # its positions or "gaps"
-        # This is O(n^2)
+        # This is O(n)
         delta_stats = Counter()
         for positions in pos_grouped.values():
             d = deltas_from_positions(positions)
             delta_stats.update(Counter(d))
 
         res.append(delta_stats)
+
         n += 1
         if end is not None and n >= end:
             break
         pos_sorted = merge_overlaping(pos_sorted)
 
     return res
+
+def sort_deltas_by_probability(deltas_freqs):
+    ''' Given a deltas frequencies of deltas of ngrams of different lengths,
+        sort them by probability.
+
+        The input for the function is a list of frequencies where the first
+        element are the frequencies of the ngrams of length <n>, the second
+        element are of ngrams of length <n+1>, then <n+2> and so on.
+
+        >>> deltas_freqs = [Counter({7: 3, 9: 1}), Counter({9: 1})]
+
+        A delta repeated several times produced by larger ngrams are much less
+        likely to be product of random or luck. Instead, they should be
+        the product of a coincidence between the plaintext and the key leaked
+        in the ciphertext of a repeated key (Vigenere cihper).
+
+        The function returns a list of tuples with the deltas and
+        their "probability" sorted them from the less likely to the
+        more likely to be random.
+
+        For performance reasons an exponent is used instead of probability:
+        larger exponent, lower probability.
+
+        >>> list(sort_deltas_by_probability(deltas_freqs))
+        [(7, 3), (9, 2), (9, 1)]
+
+        Note: in the above example Counter({9: 1}) means that a ngram of
+        length n+1 is repeated once with a distance of 9. Intuitively it should
+        be less likely to be random however it is *much less* likely the
+        distance of 7 that it was found 3 times even if the length of
+        the ngrams is n and not n+1.
+
+        That's why 7 is the correct answer and not 9.
+        '''
+
+    res = ((delta, freq*n) for n, freqs in enumerate(deltas_freqs, 1) for delta, freq in freqs.items())
+    return sorted(res, key=itemgetter(1), reverse=True)
+
