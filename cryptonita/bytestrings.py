@@ -245,7 +245,10 @@ class MutableByteString(MutableSequenceMixin, bytearray):
     __slots__ = ()
 
     def __repr__(self):
-        return super().__repr__()[11:-1]
+        return repr(self.toimmutable())
+
+    def toimmutable(self):
+        return ImmutableByteString(self)
 
     def tobytes(self):
         return bytes(self)
