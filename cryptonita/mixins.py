@@ -247,18 +247,46 @@ class SequenceMixin:
                 >>> B('AAAAAAAAAAAA').pad(16, 'zeros')
                 'AAAAAAAAAAAA\x00\x00\x00\x00'
 
+            Additional tests:
+
+                >>> for i in range(10):
+                ...     print(B('A' * i).pad(8, 'pkcs#7'))
+                b'\x08\x08\x08\x08\x08\x08\x08\x08'
+                b'A\x07\x07\x07\x07\x07\x07\x07'
+                b'AA\x06\x06\x06\x06\x06\x06'
+                b'AAA\x05\x05\x05\x05\x05'
+                b'AAAA\x04\x04\x04\x04'
+                b'AAAAA\x03\x03\x03'
+                b'AAAAAA\x02\x02'
+                b'AAAAAAA\x01'
+                b'AAAAAAAA\x08\x08\x08\x08\x08\x08\x08\x08'
+                b'AAAAAAAAA\x07\x07\x07\x07\x07\x07\x07'
+
+                >>> for i in range(10):
+                ...     print(B('A' * i).pad(8, 'pkcs#7').unpad('pkcs#7'))
+                b''
+                b'A'
+                b'AA'
+                b'AAA'
+                b'AAAA'
+                b'AAAAA'
+                b'AAAAAA'
+                b'AAAAAAA'
+                b'AAAAAAAA'
+                b'AAAAAAAAA'
+
         '''
         if scheme == 'pkcs#7':
             assert n > 0
             npad = n - (len(self) % n)
-            if npad == 0:
-                npad = n
+            assert 1 <= npad <= n
 
             padding = type(self)([npad]) * npad
 
         elif scheme == 'zeros':
             assert n > 0
             npad = n - (len(self) % n)
+            assert 1 <= npad <= n
 
             padding = type(self)([0]) * npad
         else:

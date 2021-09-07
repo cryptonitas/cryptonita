@@ -24,6 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
     from .conv import B, load_bytes
-except SystemError:
+except ImportError:
     pass    # this happens when importing from setup.py
 
