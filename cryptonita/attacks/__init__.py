@@ -9,7 +9,7 @@ from operator import xor
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.attacks import brute_force, freq_attack, search  # byexample: +timeout=10
-
+>>> from cryptonita.fuzzy_set import FuzzySet  # byexample: +timeout=1
 '''
 
 def brute_force(ciphertext, score_func, key_space=1,
@@ -56,6 +56,19 @@ def brute_force(ciphertext, score_func, key_space=1,
             >>> brute_force(ciphertext, is_bmp, key_space=possible_keys)
             {'X' -> 1.0000}
 
+        When <key_space> is a FuzzySet, not only each member is tested
+        as a possible key to decipher the given <ciphertext> but also
+        the likehood of the member scales the score.
+
+        In this example the score of 1 (from is_bmp) is multiplied by the
+        correct key's likehood 0.5 (from the FuzzySet):
+
+            >>> ciphertext = B('\x1a\x15XXXY')
+            >>> possible_keys = FuzzySet({B(k) : 0.5 for k in ('Q', 'X', 'Z')})
+            >>> brute_force(ciphertext, is_bmp, key_space=possible_keys)
+            {'X' -> 0.5000}
+
+
     '''
     assert 0.0 <= min_score <= 1.0
     are_bytes_or_fail(ciphertext, 'ciphertext')
@@ -67,13 +80,13 @@ def brute_force(ciphertext, score_func, key_space=1,
     elif isinstance(key_space, FuzzySet):
         prob = key_space
 
-    keys = FuzzySet(((k, score_func(ciphertext ^ k.inf()) * prob.get(k, 1)) for k in key_space),
+    key_and_likehood = ((k, score_func(ciphertext ^ k.inf()) * prob.get(k, 1)) for k in key_space)
+    keys = FuzzySet(key_and_likehood,
                         pr='tuple',
                         min_membership=min_score)
     return keys
 
 def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor):
-
     r'''Try to break the ciphering doing a frequency attack.
         The idea is that the plain text has some ngrams more frequent than
         others and that is reflected in the <ciphertext>.

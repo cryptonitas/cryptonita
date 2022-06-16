@@ -109,9 +109,10 @@ def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
 
     return p if return_p else (0 if p <= significance else 0.5)
 
-def good_written_word_score(m, speller):
+def good_written_word_score(m, speller, word_weight_fun=len):
+    wfun = (lambda w:1) if word_weight_fun is None else word_weight_fun
     words = m.split(sep=None)
-    return sum(speller.check(w) for w in words) / len(words)
+    return sum(speller.check(w) * wfun(w) for w in words) / sum(wfun(w) for w in words)
 
 def good_written_word_bit_score(m, speller):
     words = m.split(sep=None)

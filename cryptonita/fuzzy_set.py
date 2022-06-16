@@ -362,14 +362,15 @@ class FuzzySet(dict, collections.Set):
         self.update(other)
         return self
 
-    def sorted_items(self, reverse=True):
-        return sorted(self.items(), key=itemgetter(1, 0), reverse=True)
+    def sorted_items(self, most_likely_first=True):
+        reverse = most_likely_first
+        return sorted(self.items(), key=itemgetter(1, 0), reverse=reverse)
 
-    def sorted_keys(self, reverse=True):
-        return (k for k, _ in self.sorted_items(reverse))
+    def sorted_keys(self, most_likely_first=True):
+        return (k for k, _ in self.sorted_items(most_likely_first))
 
-    def sorted_values(self, reverse=True):
-        return (v for _, v in self.sorted_items(reverse))
+    def sorted_values(self, most_likely_first=True):
+        return (v for _, v in self.sorted_items(most_likely_first))
 
     @staticmethod
     def join(iterable, cut_off, j):
