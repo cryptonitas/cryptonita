@@ -33,7 +33,7 @@ lib-test: clean_test
 	@byexample @test/minimum.env -- README.md cryptonita/*.py cryptonita/**/*.py
 	@make -s clean_test
 
-doc-test: clean_test
+docs-test: clean_test
 	@byexample @test/minimum.env -- README.md docs/*.md docs/**/*.md
 	@make -s clean_test
 
@@ -43,7 +43,7 @@ format:
 format-test:
 	yapf -vv --style=.style.yapf --diff --recursive cryptonita/
 
-test: lib-test doc-test
+test: lib-test docs-test
 
 dist:
 	rm -Rf dist/ build/ *.egg-info
