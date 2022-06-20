@@ -1,6 +1,20 @@
 .PHONY: all test dist upload clean deps clean_test
 
 all:
+	@echo "Usage: make deps[-dev]"
+	@echo " - deps: install the dependencies for cryptonita"
+	@echo " - deps-dev: install the dependencies for run and build cryptonita"
+	@echo
+	@echo "Usage: make [lib|docs]-test"
+	@echo "Run a suite of tests."
+	@echo " - lib-test: run the tests in the lib (unit test)."
+	@echo " - docs-test: run the tests in the docs."
+	@echo
+	@echo "Usage: make format[-test]"
+	@echo "Format the source code following the PEP 8 style."
+	@echo "Use format-test to verify the complaince without touching"
+	@echo "the code"
+	@echo
 	@echo "Usage: make test|dist|upload|clean|deps"
 	@echo " - test: run the all the tests"
 	@echo " - dist: make a source and a binary distribution (package)"
@@ -11,12 +25,25 @@ all:
 
 deps:
 	pip install -e .
-	pip install byexample
-	pip install wheel twine
 
-test: clean_test
-	@byexample -l python -j 2 --timeout 6 -- README.md `find cryptonita -name "*.py"` `find docs -name "*.md"`
+deps-dev: deps
+	pip install -r requirements-dev.txt
+
+lib-test: clean_test
+	@byexample @test/minimum.env -- README.md cryptonita/*.py cryptonita/**/*.py
 	@make -s clean_test
+
+doc-test: clean_test
+	@byexample @test/minimum.env -- README.md docs/*.md docs/**/*.md
+	@make -s clean_test
+
+format:
+	yapf -vv -i --style=.style.yapf --recursive cryptonita/
+
+format-test:
+	yapf -vv --style=.style.yapf --diff --recursive cryptonita/
+
+test: lib-test doc-test
 
 dist:
 	rm -Rf dist/ build/ *.egg-info
