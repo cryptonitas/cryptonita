@@ -15,6 +15,7 @@ from collections import Counter
 # References:
 # Automating the Cracking of Simple Ciphers, Matthew C. Berntsen
 
+
 def as_ngram_repeated_positions(s, n, allow_overlapping=True):
     ''' Given a string of bytes returns a sorted list of (position, id) tuples.
 
@@ -76,20 +77,24 @@ def as_ngram_repeated_positions(s, n, allow_overlapping=True):
     # During the scanning, count how many ngrams we see of each ngram type.
     #
     # Assuming a O(1) hash implementation, this is Time/Space O(n)
-    id_of_ngram = {0:0}
+    id_of_ngram = {0: 0}
     pos_sorted = []
-    ngram_cnt_by_id = defaultdict(int, [(0,0)]) # id==0 is special with a count of 0 always
+    ngram_cnt_by_id = defaultdict(
+        int, [(0, 0)]
+    )  # id==0 is special with a count of 0 always
     for pos, ngram in enumerate(s.ngrams(n)):
         id = id_of_ngram.setdefault(ngram, len(id_of_ngram))
 
         pos_sorted.append((pos, id))
-        ngram_cnt_by_id[id] += 1        # because the ids goes from 1 to N we could use an array
+        ngram_cnt_by_id[
+            id] += 1  # because the ids goes from 1 to N we could use an array
 
     # Filter any unique ngram (count of 0)
     # This is Time/Space O(n)
     pos_sorted = [(p, id) for p, id in pos_sorted if ngram_cnt_by_id[id] > 1]
 
     return pos_sorted
+
 
 def merge_overlaping(pos_sorted):
     '''
@@ -169,14 +174,14 @@ def merge_overlaping(pos_sorted):
     # false negatives.
     #
     # This is a Time/Space O(n)
-    id_of_ngram = {0:0}
-    ngram_cnt_by_id = defaultdict(int, [(0,0)])
+    id_of_ngram = {0: 0}
+    ngram_cnt_by_id = defaultdict(int, [(0, 0)])
     for ix, (cur, nex) in enumerate(zip(pos_sorted[:-1], pos_sorted[1:])):
         pcur, id = cur
         pnex, id2 = nex
 
         if pcur + 1 != pnex:
-            pos_sorted[ix] = (0, 0) # delete later (index 0 is special)
+            pos_sorted[ix] = (0, 0)  # delete later (index 0 is special)
         else:
             # instead of building the ngram from G1 and G2 we use
             # G1's and G2's identifiers as a temporally ngram representation
@@ -186,7 +191,7 @@ def merge_overlaping(pos_sorted):
             # the (id, id2) tuple order is important)
             id = id_of_ngram.setdefault((id, id2), len(id_of_ngram))
 
-            pos_sorted[ix] = (pcur, id)   # new ngram
+            pos_sorted[ix] = (pcur, id)  # new ngram
             ngram_cnt_by_id[id] += 1
 
     # the last position P1 always is deleted because there is
@@ -200,6 +205,7 @@ def merge_overlaping(pos_sorted):
     pos_sorted = [(p, id) for p, id in pos_sorted if ngram_cnt_by_id[id] > 1]
 
     return pos_sorted
+
 
 def deltas_from_positions(positions):
     '''
@@ -225,7 +231,8 @@ def deltas_from_positions(positions):
 
     '''
     # Time O(n)
-    return (y-x for x, y in zip(positions[:-1], positions[1:]))
+    return (y - x for x, y in zip(positions[:-1], positions[1:]))
+
 
 def frequency_of_deltas(s, start=3, end=None):
     '''
@@ -289,6 +296,7 @@ def frequency_of_deltas(s, start=3, end=None):
 
     return res
 
+
 def sort_deltas_by_probability(deltas_freqs):
     ''' Given a deltas frequencies of deltas of ngrams of different lengths,
         sort them by probability.
@@ -323,6 +331,8 @@ def sort_deltas_by_probability(deltas_freqs):
         That's why 7 is the correct answer and not 9.
         '''
 
-    res = ((delta, freq*n) for n, freqs in enumerate(deltas_freqs, 1) for delta, freq in freqs.items())
+    res = (
+        (delta, freq * n) for n, freqs in enumerate(deltas_freqs, 1)
+        for delta, freq in freqs.items()
+    )
     return sorted(res, key=itemgetter(1), reverse=True)
-

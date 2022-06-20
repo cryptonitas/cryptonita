@@ -1,11 +1,11 @@
 from cryptonita import B
 import string
 import gmpy2 as gp
-
 '''
 >>> from cryptonita import B                    # byexample: +timeout=10
 >>> from cryptonita.toys.substitution_ciphers import *
 '''
+
 
 def atbash(ptext, alphabet=B(string.ascii_lowercase), dec=False):
     ''' Atbash encrypts each letter of the alphabet by its
@@ -79,6 +79,7 @@ def rot13(ptext, alphabet=B(string.ascii_lowercase), dec=False):
 
     return caesar(ptext, alphabet, key=shift)
 
+
 def caesar(ptext, alphabet=B(string.ascii_lowercase), key=3, dec=False):
     ''' Shit by 3 the alphabet and use that as the substitution
         table.
@@ -107,9 +108,12 @@ def caesar(ptext, alphabet=B(string.ascii_lowercase), key=3, dec=False):
     shift = key % len(alphabet)
 
     enc_alphabet = alphabet[shift:] + alphabet[:shift]
-    tr = dict(zip(enc_alphabet, alphabet) if dec else zip(alphabet, enc_alphabet))
+    tr = dict(
+        zip(enc_alphabet, alphabet) if dec else zip(alphabet, enc_alphabet)
+    )
 
     return substitute(ptext, tr)
+
 
 def affine(ptext, key, alphabet=B(string.ascii_lowercase), dec=False):
     '''
@@ -152,16 +156,19 @@ def affine(ptext, key, alphabet=B(string.ascii_lowercase), dec=False):
     # see each symbol in the alphabet as a number starting
     # from 0 to m-1
     # then apply the affine transformation to each number
-    idx = ((a*x+b) % m for x in range(m))
+    idx = ((a * x + b) % m for x in range(m))
 
     # use the indexes to build a "shuffled" version of the
     # alphabet
     enc_alphabet = (alphabet[ix] for ix in idx)
 
     # with that, build the translation table
-    tr = dict(zip(enc_alphabet, alphabet) if dec else zip(alphabet, enc_alphabet))
+    tr = dict(
+        zip(enc_alphabet, alphabet) if dec else zip(alphabet, enc_alphabet)
+    )
 
     return substitute(ptext, tr)
+
 
 def substitute(ptext, tr):
     return B(tr.get(p, p) for p in ptext)

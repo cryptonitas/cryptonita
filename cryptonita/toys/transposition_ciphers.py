@@ -1,10 +1,10 @@
 from cryptonita import B
 import string
-
 '''
 >>> from cryptonita import B                    # byexample: +timeout=10
 >>> from cryptonita.toys.transposition_ciphers import *
 '''
+
 
 def railfence(ptext, key, dec=False):
     ''' Distribute the text in a number of rows or rails and combine
@@ -54,16 +54,15 @@ def railfence(ptext, key, dec=False):
         vlen = key + (key - 2)
         assert len(virtual_rails) == vlen
         for i in range(len(ptext)):
-            virtual_rails[i%vlen].append(i) # dummy/placeholders
+            virtual_rails[i % vlen].append(i)  # dummy/placeholders
 
         # now we replace our placeholders by the real ciphertext
         rails = virtual_rails[:key]
         start = 0
         for i in range(key):
             l = len(rails[i])
-            rails[i] = list(ptext[start:start+l])
+            rails[i] = list(ptext[start:start + l])
             start += l
-
 
         # and finally we iterate the rails like if we were encrypting
         # but instead of writing (append) we read (pop)
@@ -73,7 +72,7 @@ def railfence(ptext, key, dec=False):
         tmp = []
         assert len(virtual_rails) == vlen
         for i in range(len(ptext)):
-            tmp.append(virtual_rails[i%vlen].pop(0))
+            tmp.append(virtual_rails[i % vlen].pop(0))
 
         return B(tmp)
 
@@ -93,7 +92,7 @@ def railfence(ptext, key, dec=False):
         vlen = key + (key - 2)
         assert len(virtual_rails) == vlen
         for i, b in enumerate(ptext):
-            virtual_rails[i%vlen].append(b)
+            virtual_rails[i % vlen].append(b)
 
         # get the first n rails which are the real ones
         # and build the ciphertext from them
@@ -101,4 +100,3 @@ def railfence(ptext, key, dec=False):
         rails = (B(rail) for rail in rails)
 
         return B.join(rails)
-

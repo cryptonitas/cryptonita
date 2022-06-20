@@ -3,6 +3,7 @@
 >>> from cryptonita import B        # byexample: +timeout=10
 '''
 
+
 def inv_right_shift(v, b, m):
     '''
         >>> from cryptonita.attacks.prng import inv_right_shift
@@ -29,6 +30,7 @@ def inv_right_shift(v, b, m):
 
     return g
 
+
 def inv_left_shift(v, b, m):
     '''
         >>> from cryptonita.attacks.prng import inv_left_shift
@@ -54,6 +56,7 @@ def inv_left_shift(v, b, m):
         i += b
 
     return g
+
 
 def clone_mt19937(out):
     ''' Clone the internal state of a Mersenne Twister 19937 (MT19937)
@@ -95,29 +98,30 @@ def clone_mt19937(out):
 
     state = []
     for y in out:
-        y = inv_right_shift(y, l, 0xffffffff)    # inv of y ^ ((y >> l) & 0)
-        y = inv_left_shift(y, t, c)     # inv of y ^ ((y << t) & c)
-        y = inv_left_shift(y, s, b)     # inv of y ^ ((y << s) & b)
-        y = inv_right_shift(y, u, d)    # inv of y ^ ((y >> u) & d)
+        y = inv_right_shift(y, l, 0xffffffff)  # inv of y ^ ((y >> l) & 0)
+        y = inv_left_shift(y, t, c)  # inv of y ^ ((y << t) & c)
+        y = inv_left_shift(y, s, b)  # inv of y ^ ((y << s) & b)
+        y = inv_right_shift(y, u, d)  # inv of y ^ ((y >> u) & d)
 
         state.append(y)
 
     found = False
     i = 0
     g = MT19937(0)
-    g.reset_state(state[i:i+n], index=n)
+    g.reset_state(state[i:i + n], index=n)
 
-    while i+n < len(out):
+    while i + n < len(out):
         v = g.extract_number()
-        found = v == out[i+n]
+        found = v == out[i + n]
         if found:
-            g.reset_state(state[i:i+n], index=n)
+            g.reset_state(state[i:i + n], index=n)
             break
 
         i += 1
-        g.reset_state(state[i:i+n], index=n)
+        g.reset_state(state[i:i + n], index=n)
 
     return g
+
 
 # https://en.wikipedia.org/wiki/Mersenne_Twister
 class MT19937:
@@ -131,8 +135,8 @@ class MT19937:
         l = 18
 
         # Create a length n array to store the state of the generator
-        self.MT = MT = [] # n size
-        self.index = n+1
+        self.MT = MT = []  # n size
+        self.index = n + 1
         lower_mask = (1 << r) - 1
         upper_mask = (~lower_mask) & W
 
@@ -140,20 +144,19 @@ class MT19937:
         index = n
         MT.append(seed)
         for i in range(1, n):
-            MT.append((f * (MT[i-1] ^ (MT[i-1] >> (w-2))) + i) & W)
-
+            MT.append((f * (MT[i - 1] ^ (MT[i - 1] >> (w - 2))) + i) & W)
 
         # Generate the next n values from the series x_i
         def twist():
             for i in range(n):
-                 x = (MT[i] & upper_mask) \
-                           + (MT[(i+1) % n] & lower_mask)
+                x = (MT[i] & upper_mask) \
+                          + (MT[(i+1) % n] & lower_mask)
 
-                 xA = x >> 1
-                 if (x % 2) != 0:  # lowest bit of x is 1
-                     xA = xA ^ a
+                xA = x >> 1
+                if (x % 2) != 0:  # lowest bit of x is 1
+                    xA = xA ^ a
 
-                 MT[i] = MT[(i + m) % n] ^ xA
+                MT[i] = MT[(i + m) % n] ^ xA
 
             self.index = 0
 
@@ -187,4 +190,3 @@ class MT19937:
 
     def __iter__(self):
         return self.extract_number()
-

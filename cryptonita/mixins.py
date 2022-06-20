@@ -1,11 +1,11 @@
 from cryptonita.helpers import are_same_length_or_fail, are_bytes_or_fail
 import base64
-
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
+
 
 class SequenceMixin:
     __slots__ = ()
@@ -33,12 +33,12 @@ class SequenceMixin:
             '''
         v = super().__getitem__(idx)
         if isinstance(idx, slice):
-            return type(self)(v)    # TODO, double copy?
+            return type(self)(v)  # TODO, double copy?
 
         return v
 
     def copy(self):
-        return type(self)(super().copy())   # TODO, double copy?
+        return type(self)(super().copy())  # TODO, double copy?
 
     def __xor__(self, other):
         r'''
@@ -116,10 +116,10 @@ class SequenceMixin:
                 TypeError: You cannot expand an byte string.
             '''
 
-        return type(self)(super().__add__(other))   # TODO double copy?
+        return type(self)(super().__add__(other))  # TODO double copy?
 
     def __radd__(self, other):
-        return type(self)(other) + self   # TODO double copy?
+        return type(self)(other) + self  # TODO double copy?
 
     def __iadd__(self, other):
         raise TypeError("You cannot expand an byte string.")
@@ -153,10 +153,10 @@ class SequenceMixin:
                 Traceback <...>
                 TypeError: You cannot expand an byte string.
             '''
-        return type(self)(super().__mul__(other))   # TODO double copy?
+        return type(self)(super().__mul__(other))  # TODO double copy?
 
     def __rmul__(self, other):
-        return type(self)(super().__mul__(other))   # TODO double copy?
+        return type(self)(super().__mul__(other))  # TODO double copy?
 
     def __imul__(self, other):
         raise TypeError("You cannot expand an byte string.")
@@ -305,8 +305,9 @@ class SequenceMixin:
             n = self[-1]
 
             if n > 64 or self[-n:] != type(self)([n]) * n:
-                raise ValueError("Bad padding '%s' with last byte %#x" %
-                                        (scheme, n))
+                raise ValueError(
+                    "Bad padding '%s' with last byte %#x" % (scheme, n)
+                )
 
             return self[:-n]
         else:
@@ -362,14 +363,18 @@ class MutableSequenceMixin(SequenceMixin):
             '''
         if isinstance(idx, slice):
             start, stop, step = idx.indices(len(self))
-            dlen = (stop-start)//step
+            dlen = (stop - start) // step
             if len(val) != dlen:
-                raise ValueError("Mismatch lengths, setting %i bytes into a buffer of %i bytes length" %
-                        (len(val), dlen))
+                raise ValueError(
+                    "Mismatch lengths, setting %i bytes into a buffer of %i bytes length"
+                    % (len(val), dlen)
+                )
         elif not isinstance(val, int):
             if len(val) != 1:
-                raise ValueError("Mismatch lengths, setting %i bytes into a buffer of %i bytes length" %
-                        (len(val), 1))
+                raise ValueError(
+                    "Mismatch lengths, setting %i bytes into a buffer of %i bytes length"
+                    % (len(val), 1)
+                )
 
             val = val[0]
 
@@ -426,6 +431,7 @@ class MutableSequenceMixin(SequenceMixin):
 
         return self
 
+
 class ByteStatsMixin:
     __slots__ = ()
 
@@ -457,6 +463,7 @@ class ByteStatsMixin:
         x = self ^ m2
         return x.count_1s()
 
+
 _number_of_1s_in_byte = [0] * 256
 for i in range(len(_number_of_1s_in_byte)):
     _number_of_1s_in_byte[i] = (i & 1) + _number_of_1s_in_byte[i >> 1]
@@ -467,6 +474,7 @@ import collections
 import itertools as itools
 from cryptonita.stats import entropy
 import cryptonita.plots
+
 
 class SequenceStatsMixin(cryptonita.plots.SequencePlotMixin):
     __slots__ = ()
@@ -525,7 +533,7 @@ class SequenceStatsMixin(cryptonita.plots.SequencePlotMixin):
         # consecutive items if distance is 0
         # 1 item between if distance is 1, ...
         left, right = itools.tee(self)
-        right = itools.islice(right, 1+distance, None)
+        right = itools.islice(right, 1 + distance, None)
 
         # ``left`` is longer than ``right`` but it is ok: we want to drop
         # the last items from ``left`` and zip() will do that for us
@@ -537,10 +545,11 @@ class SequenceStatsMixin(cryptonita.plots.SequencePlotMixin):
                 if idx_of in ('first', 'both'):
                     yield idx
                 if idx_of in ('second', 'both'):
-                    yield idx+distance+1
+                    yield idx + distance + 1
             idx += 1
 
     def has_duplicates(self, distance):
         return next(self.iduplicates(distance), None) != None
+
 
 from cryptonita.views import InfiniteStream, NgramsView, NblocksView

@@ -1,12 +1,12 @@
 import numpy as np
 import gmpy2 as gp
-
 '''
 >>> import numpy as np
 >>> import gmpy2 as gp
 
 >>> from cryptonita.mod import inv_matrix        # byexample: +timeout=10
 '''
+
 
 def inv_matrix(A, m):
     ''' Find the inverse of the matrix A module m if such exists.

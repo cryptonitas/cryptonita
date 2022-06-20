@@ -1,8 +1,8 @@
-
 '''
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.metrics.index_of_coincidence import *
 '''
+
 
 def count_coincidences(s1, s2=None, shift=True):
     ''' Count how many coincidences are between <s1> and <s2>.
@@ -64,7 +64,9 @@ def count_coincidences(s1, s2=None, shift=True):
         [1] https://eldipa.github.io/book-of-gehn/articles/2019/10/04/Index-of-Coincidence.html
     '''
     if not shift and s2 is None:
-        raise ValueError("We cannot calculate the auto count of coincidences without shifting.")
+        raise ValueError(
+            "We cannot calculate the auto count of coincidences without shifting."
+        )
 
     if not shift:
         assert s2 is not None
@@ -75,7 +77,7 @@ def count_coincidences(s1, s2=None, shift=True):
 
         count = 0
         for cnt in f1.values():
-            count += cnt * (cnt-1)
+            count += cnt * (cnt - 1)
 
         return count
 
@@ -90,6 +92,7 @@ def count_coincidences(s1, s2=None, shift=True):
 
         return count
 
+
 def index_of_coincidence(s1, s2, expected):
     if expected < 1:
         # this is a probability, we can calculate the expected count
@@ -100,4 +103,3 @@ def index_of_coincidence(s1, s2, expected):
         expected = expected * len(s1)
 
     return count_coincidences(s1, s2, shift=True) / expected
-

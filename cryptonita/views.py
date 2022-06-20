@@ -7,8 +7,9 @@ import math
 import itertools
 from cryptonita.helpers import indices_from_slice_or_index
 
+
 class InfiniteStream:
-    __slots__ = ('base',)
+    __slots__ = ('base', )
 
     def __init__(self, base):
         self.base = base
@@ -53,9 +54,14 @@ class InfiniteStream:
         return '..' + repr(self.base) + '..'
 
     def __len__(self):
-        raise TypeError("The length of an endless stream is undefined. You may think it is infinity.")
+        raise TypeError(
+            "The length of an endless stream is undefined. You may think it is infinity."
+        )
+
 
 from cryptonita.mixins import SequenceStatsMixin
+
+
 class NgramsView(SequenceStatsMixin):
     ''' N-grams view of a byte string.
 
@@ -103,14 +109,17 @@ class NgramsView(SequenceStatsMixin):
             raise ValueError("The size of a ngram cannot be zero or negative.")
 
         if len(base) < n:
-            raise ValueError("The byte string has only %i bytes. It is not possible to create even a single ngram of length %i." % (len(base), n))
+            raise ValueError(
+                "The byte string has only %i bytes. It is not possible to create even a single ngram of length %i."
+                % (len(base), n)
+            )
 
         self.base = base
         self.n = n
 
     def __iter__(self):
         n = self.n
-        return (self.base[i:i+n] for i in range(len(self)))
+        return (self.base[i:i + n] for i in range(len(self)))
 
     def __getitem__(self, idx):
         ''' Get a ngram or a range of ngrams
@@ -140,11 +149,14 @@ class NgramsView(SequenceStatsMixin):
 
     def _base_slice_from_ngram_slice(self, idx):
         n = self.n
-        start, stop, step = indices_from_slice_or_index(idx, len(self), step_must_be_one=True)
+        start, stop, step = indices_from_slice_or_index(
+            idx, len(self), step_must_be_one=True
+        )
         return slice(start, stop + n - 1, 1)
 
     def __repr__(self):
         return repr(list(self))
+
 
 class NblocksView(SequenceStatsMixin):
     ''' N-blocks view of a byte string.
@@ -172,6 +184,7 @@ class NblocksView(SequenceStatsMixin):
 
     '''
     __slots__ = ('base', 'bz')
+
     def __init__(self, base, block_size):
         if block_size <= 0:
             raise ValueError("The size of a block cannot be zero or negative.")
@@ -180,7 +193,7 @@ class NblocksView(SequenceStatsMixin):
 
     def __iter__(self):
         bz = self.bz
-        return (self.base[i*bz:(i+1)*bz] for i in range(len(self)))
+        return (self.base[i * bz:(i + 1) * bz] for i in range(len(self)))
 
     def __getitem__(self, idx):
         ''' Get a particular block:
@@ -267,7 +280,7 @@ class NblocksView(SequenceStatsMixin):
                 raise ValueError("Mismatch lengths, setting %i blocks into a buffer of %i blocks length" \
                         % (len(val), nblock_span))
 
-            for i, block in enumerate(val, base_slice.start//self.bz):
+            for i, block in enumerate(val, base_slice.start // self.bz):
                 self[i] = block
 
         else:
@@ -277,8 +290,10 @@ class NblocksView(SequenceStatsMixin):
 
     def _base_slice_from_block_slice(self, idx):
         bz = self.bz
-        start, stop, step = indices_from_slice_or_index(idx, len(self), step_must_be_one=True)
-        return slice(start*bz, stop*bz, 1)
+        start, stop, step = indices_from_slice_or_index(
+            idx, len(self), step_must_be_one=True
+        )
+        return slice(start * bz, stop * bz, 1)
 
     def __repr__(self):
         return repr(list(self))

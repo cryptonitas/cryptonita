@@ -1,19 +1,18 @@
 from cryptonita.mixins import (
-        SequenceMixin,
-        MutableSequenceMixin,
-        ByteStatsMixin,
-        SequenceStatsMixin
-        )
+    SequenceMixin, MutableSequenceMixin, ByteStatsMixin, SequenceStatsMixin
+)
 
 import numpy as np
 from collections.abc import Iterable, Callable
-
 '''
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
-class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, bytes):
+
+class ImmutableByteString(
+    SequenceMixin, ByteStatsMixin, SequenceStatsMixin, bytes
+):
     ''' Enhanced version of a immutable byte string.
 
             >>> s = B(b'ABA')
@@ -57,6 +56,7 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
             True
     '''
     __slots__ = ()
+
     def __repr__(self):
         return super().__repr__()[1:]
 
@@ -78,7 +78,6 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
 
     def fhex(self, n=8):
         return super().hex()[:n]
-
 
     def map(self, table, table2=None, fill=-1, delete=set()):
         ''' Translate the byte string replacing each byte
@@ -234,6 +233,7 @@ class ImmutableByteString(SequenceMixin, ByteStatsMixin, SequenceStatsMixin, byt
 
         deletechars = bytes(delete_set)
         return super().translate(table, deletechars)
+
 
 class MutableByteString(MutableSequenceMixin, bytearray):
     ''' Enhanced version of a mutable byte string.

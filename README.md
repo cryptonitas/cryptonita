@@ -21,7 +21,7 @@ a class to represent an immutable sequence of bytes.
 ``B`` is a shortcut to create ``ImmutableByteString``s that accepts a
 very large range of inputs doing any conversion to bytes behind the scenes.
 
-REF HERE        
+REF HERE
 
 Now, let's pick a *very* secure key
 
@@ -55,8 +55,8 @@ types of strings into a ``ImmutableByteString``
 but it also can do the opposite and ``encode`` the bytes into
 different forms, like base 64.
 
-REF about XOR       
-REF about encode         
+REF about XOR
+REF about encode
 
 ### Detecting Vigenere ciphertexts
 

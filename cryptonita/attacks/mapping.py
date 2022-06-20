@@ -1,12 +1,11 @@
-
 import z3
 
 from cryptonita.helpers import are_same_length_or_fail, are_bytes_or_fail
-
 '''
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.attacks.mapping import _ngrams_map
 '''
+
 
 def _single_ngram_map(mapping, _from, _to):
     ''' Asserts (in z3/smt terminology) that there is a mapping
@@ -18,6 +17,7 @@ def _single_ngram_map(mapping, _from, _to):
     are_bytes_or_fail(_from, 'cipher-ngram')
     are_bytes_or_fail(_to, 'cipher-ngram')
     return z3.And([mapping[f] == t for f, t in zip(_from, _to)])
+
 
 def _ngrams_map(possible_plain_ngrams_by_cipher_ngram, alphabet=None):
     ''' Let's assume that we are 100% sure that a particular ngram
@@ -55,7 +55,7 @@ def _ngrams_map(possible_plain_ngrams_by_cipher_ngram, alphabet=None):
         alphabet = (0, 256)
 
     alph_low, alph_high = alphabet
-    alph_sz = alph_high-alph_low
+    alph_sz = alph_high - alph_low
 
     kmap = z3.IntVector('kmap', alph_sz)
     assertions = []
@@ -74,4 +74,3 @@ def _ngrams_map(possible_plain_ngrams_by_cipher_ngram, alphabet=None):
         assertions.append(alternatives)
 
     return kmap
-

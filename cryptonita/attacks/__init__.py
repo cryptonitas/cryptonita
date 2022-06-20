@@ -4,7 +4,6 @@ from cryptonita.helpers import are_bytes_or_fail
 
 from itertools import product, zip_longest
 from operator import xor
-
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
@@ -12,8 +11,8 @@ from operator import xor
 >>> from cryptonita.fuzzy_set import FuzzySet  # byexample: +timeout=1
 '''
 
-def brute_force(ciphertext, score_func, key_space=1,
-                        min_score=0):
+
+def brute_force(ciphertext, score_func, key_space=1, min_score=0):
     r'''Guess what key was used to xor the <ciphertext>.
         Guessing means try every single possible key so we need to score
         each try with <score_func> to see what key is really useful.
@@ -80,13 +79,17 @@ def brute_force(ciphertext, score_func, key_space=1,
     elif isinstance(key_space, FuzzySet):
         prob = key_space
 
-    key_and_likehood = ((k, score_func(ciphertext ^ k.inf()) * prob.get(k, 1)) for k in key_space)
-    keys = FuzzySet(key_and_likehood,
-                        pr='tuple',
-                        min_membership=min_score)
+    key_and_likehood = (
+        (k, score_func(ciphertext ^ k.inf()) * prob.get(k, 1))
+        for k in key_space
+    )
+    keys = FuzzySet(key_and_likehood, pr='tuple', min_membership=min_score)
     return keys
 
-def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor):
+
+def freq_attack(
+    ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor
+):
     r'''Try to break the ciphering doing a frequency attack.
         The idea is that the plain text has some ngrams more frequent than
         others and that is reflected in the <ciphertext>.
@@ -151,7 +154,7 @@ def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor
     # But if we do, we removed all the proposed keys of 2 bytes, what was the
     # point? It will only be useful if we don't find X but XX or we don't find XX
     # and we do find X.
-    for N in (1,):
+    for N in (1, ):
         # count all the possible ngrams of N bytes of length of
         # the ciphertext
         # then, pick the T most common and therefore the most likely to be
@@ -159,22 +162,29 @@ def freq_attack(ciphertext, most_common_plain_ngrams, cipher_ngram_top=1, op=xor
         _cipher_ngrams = ciphertext.ngrams(N).most_common(T)
 
         # most common plain ngrams of N bytes of length
-        _plain_ngrams = filter(lambda ngram: len(ngram) == N,
-                                            most_common_plain_ngrams)
+        _plain_ngrams = filter(
+            lambda ngram: len(ngram) == N, most_common_plain_ngrams
+        )
 
         # if our hypothesis is correct, at least one of the c cipher ngrams
         # will be (p ^ k) where p is one of the p plain ngrams
         # if this is true, one of the 'proposed keys' keys will be the real
         # secret key k
-        tmp = FuzzySet(((op(c, p), prob.get(p, 1)) for c, p in product(_cipher_ngrams,
-                                                                    _plain_ngrams)),
-                                pr='tuple')
+        tmp = FuzzySet(
+            (
+                (op(c, p), prob.get(p, 1))
+                for c, p in product(_cipher_ngrams, _plain_ngrams)
+            ),
+            pr='tuple'
+        )
         keys.update(tmp)
 
     return keys
 
 
-def guess_key_length(ciphertext, length_space, score_func, min_score=0.5, **score_func_params):
+def guess_key_length(
+    ciphertext, length_space, score_func, min_score=0.5, **score_func_params
+):
     ''' Guess the length of the key that was used to cipher
         the given ciphertext.
 
@@ -194,12 +204,14 @@ def guess_key_length(ciphertext, length_space, score_func, min_score=0.5, **scor
     are_bytes_or_fail(ciphertext, 'ciphertext')
 
     if isinstance(length_space, int):
-        length_space = range(1, length_space+1)
+        length_space = range(1, length_space + 1)
 
     params = score_func_params
-    lengths = FuzzySet(((l, score_func(l, ciphertext, **params)) for l in length_space),
-                        pr='tuple',
-                        min_membership=min_score)
+    lengths = FuzzySet(
+        ((l, score_func(l, ciphertext, **params)) for l in length_space),
+        pr='tuple',
+        min_membership=min_score
+    )
     return lengths
 
 
@@ -221,6 +233,7 @@ def correct_key(key, ciphertexts, suggester):
 
     assert all(len(sym_corrections) >= 0 for sym_corrections in corrections)
     return corrections
+
 
 def search(start, stop, oracle, likely=None):
     ''' Search the first value in the range <start>:<stop>
@@ -283,7 +296,7 @@ def search(start, stop, oracle, likely=None):
 
     assert start <= likely <= stop
 
-    lower  = range(likely-1, start-1, -1)
+    lower = range(likely - 1, start - 1, -1)
     higher = range(likely, stop)
 
     for i, j in zip_longest(higher, lower):
@@ -292,4 +305,3 @@ def search(start, stop, oracle, likely=None):
 
         if j is not None and oracle(j):
             return j
-

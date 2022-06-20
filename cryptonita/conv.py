@@ -2,12 +2,12 @@ import base64, bisect, struct, itertools
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 import numpy as np
-
 '''
 >>> from cryptonita.conv import B           # byexample: +timeout=10
 >>> from cryptonita.conv import as_bytes, transpose, uniform_length, repack, join_bytestrings
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
+
 
 def as_bytes(raw, encoding='ascii', mutable=False):
     r'''
@@ -121,7 +121,10 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
     elif isinstance(raw, np.ndarray):
         if len(raw.shape) != 1:
-            raise ValueError("only 1-dimentional arrays are supported but array of shape %s was given" % str(raw.shape))
+            raise ValueError(
+                "only 1-dimentional arrays are supported but array of shape %s was given"
+                % str(raw.shape)
+            )
         raw = list(raw)
 
     #   as_bytes([b'\x0A', b'\x0B']) -> b'\x0a\x0b'
@@ -134,7 +137,9 @@ def as_bytes(raw, encoding='ascii', mutable=False):
         raw = raw.replace(b' ', b'')
         if (encoding == 'upper' and not raw.isupper()) or \
                 (encoding == 'lower' and not raw.islower()):
-            raise ValueError("text must contain %scase plus spaces only." % encoding)
+            raise ValueError(
+                "text must contain %scase plus spaces only." % encoding
+            )
 
         offset = ord('A') if encoding == 'upper' else ord('a')
         raw = bytes(r - offset for r in raw)
@@ -148,6 +153,7 @@ def as_bytes(raw, encoding='ascii', mutable=False):
         raw = getattr(base64, 'b%idecode' % encoding)(raw)
 
     return MutableByteString(raw) if mutable else ImmutableByteString(raw)
+
 
 def load_bytes(fp, mode='rt', **k):
     r'''Open a file <fp> with mode <mode> (read - text by default)
@@ -168,8 +174,10 @@ def load_bytes(fp, mode='rt', **k):
 
     return (as_bytes(line.strip(), **k) for line in fp)
 
+
 # alias
 B = as_bytes
+
 
 def transpose(sequences, allow_holes=False, fill_value=None):
     ''' Given a list of sequences, stack them, see them as a matrix,
@@ -235,14 +243,17 @@ def transpose(sequences, allow_holes=False, fill_value=None):
     if not allow_holes:
         for i, seq in enumerate(sequences, 1):
             if len(seq) != l:
-                raise ValueError("Sequences have different length: first sequence has %i bytes but the %ith has %i." % (
-                    l, i, len(seq)))
+                raise ValueError(
+                    "Sequences have different length: first sequence has %i bytes but the %ith has %i."
+                    % (l, i, len(seq))
+                )
 
     output = []
     for column in itertools.zip_longest(*sequences, fillvalue=fill_value):
         output.append(B(b for b in column if b is not None))
 
     return output
+
 
 def uniform_length(sequences, *, drop=0, length=None):
     ''' Given a list of sequences, stack them and see them as a matrix:
@@ -287,21 +298,23 @@ def uniform_length(sequences, *, drop=0, length=None):
     '''
 
     if length is not None:
-        return [seq[:length] if len(seq) != length else seq
-                        for seq in sequences if len(seq) >= length]
+        return [
+            seq[:length] if len(seq) != length else seq for seq in sequences
+            if len(seq) >= length
+        ]
 
     sequences, original_idxs = zip(
-            *sorted(
-                ((s, idx) for idx, s in enumerate(sequences)),
-                key = lambda seq_idx: (len(seq_idx[0]), seq_idx[1])
-                )
-            )
+        *sorted(
+            ((s, idx) for idx, s in enumerate(sequences)),
+            key=lambda seq_idx: (len(seq_idx[0]), seq_idx[1])
+        )
+    )
 
     sequences = list(sequences)
 
     slens = [len(seq) for seq in sequences]
 
-    idx = min(int(drop * len(sequences)), len(sequences)-1)
+    idx = min(int(drop * len(sequences)), len(sequences) - 1)
     min_len = slens[idx]
 
     ilow = bisect.bisect_left(slens, min_len, 0, idx)
@@ -315,13 +328,11 @@ def uniform_length(sequences, *, drop=0, length=None):
 
     # restore the original order
     sequences, _ = zip(
-            *sorted(
-                zip(sequences, original_idxs),
-                key = lambda seq_idx: seq_idx[1]
-                )
-            )
+        *sorted(zip(sequences, original_idxs), key=lambda seq_idx: seq_idx[1])
+    )
 
     return list(sequences)
+
 
 def repack(iterable, ifmt, ofmt):
     ''' Repack each element in <iterable> packing them with <ifmt>
@@ -356,6 +367,7 @@ def repack(iterable, ifmt, ofmt):
         for o in struct.unpack(ofmt, struct.pack(ifmt, i)):
             yield o
 
+
 def join_bytestrings(*seqs):
     ''' Join the sequences of byte strings.
 
@@ -364,5 +376,6 @@ def join_bytestrings(*seqs):
         'ABCDE'
         '''
     return B('').join(*seqs)
+
 
 B.join = join_bytestrings

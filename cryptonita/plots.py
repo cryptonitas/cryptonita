@@ -1,6 +1,6 @@
-
 import functools
 from cryptonita.helpers import bisect_left_rev, bisect_right_rev
+
 
 def import_plot_libs():
     import numpy as np
@@ -10,8 +10,10 @@ def import_plot_libs():
 
     return np, mpl, plt, sns
 
+
 # See for more plot ideas:
 # https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python/
+
 
 def axes_style_decorator(*style_args, **style_kargs):
     def decorator(func):
@@ -19,7 +21,9 @@ def axes_style_decorator(*style_args, **style_kargs):
         def wrapped(*args, **kargs):
             with sns.axes_style(*style_args, **style_kargs):
                 return func(*args, **kargs)
+
         return wrapped
+
     return decorator
 
 
@@ -54,14 +58,16 @@ class SequencePlotMixin:
         elems, freqs = zip(*s.freq().most_common(n))
 
         # prune
-        ileft  = 0 if fmax is None else bisect_left_rev(freqs, fmax)
+        ileft = 0 if fmax is None else bisect_left_rev(freqs, fmax)
         iright = bisect_right_rev(freqs, fmin, lo=ileft)
 
         elems = elems[ileft:iright]
         freqs = freqs[ileft:iright]
 
         # format
-        elems = ["%02x" % e for e in elems] if isinstance(elems[0], int) else [e.fhex(8) for e in elems]
+        elems = ["%02x" % e for e in elems] if isinstance(elems[0], int) else [
+            e.fhex(8) for e in elems
+        ]
 
         # percentiles
         fsums = np.cumsum(freqs)
@@ -75,7 +81,7 @@ class SequencePlotMixin:
                     p = percentiles[0]
                     del percentiles[0]
                 yticks.append(ix)
-                ylabels.append(round(p/ftotal, 2))
+                ylabels.append(round(p / ftotal, 2))
 
                 if not percentiles:
                     break
@@ -85,7 +91,7 @@ class SequencePlotMixin:
         ax.set_ylabel('Percentile')
 
         # make twin axis: count and frequency
-        ax2=ax.twiny()
+        ax2 = ax.twiny()
 
         ax.set_xlabel('Count')
         ax2.set_xlabel('Frequency [%]')
@@ -104,14 +110,21 @@ class SequencePlotMixin:
 
             # Center the text vertically in the bar
             yloc = rect.get_y() + rect.get_height() / 2
-            ax.annotate(el, xy=(width, yloc), xytext=(xloc, 0),
-                                textcoords="offset points",
-                                ha=align, va='center_baseline', fontsize='small',
-                                color=clr, fontweight='demibold')
+            ax.annotate(
+                el,
+                xy=(width, yloc),
+                xytext=(xloc, 0),
+                textcoords="offset points",
+                ha=align,
+                va='center_baseline',
+                fontsize='small',
+                color=clr,
+                fontweight='demibold'
+            )
 
         # fix the frequency range
         _, xmax = ax.get_xlim()
-        ax2.set_xlim(0, (xmax/ftotal) * 100)
+        ax2.set_xlim(0, (xmax / ftotal) * 100)
 
         ax2.grid(None)
 

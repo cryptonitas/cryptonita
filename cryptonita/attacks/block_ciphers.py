@@ -1,10 +1,11 @@
 from cryptonita import B
 
+
 def decrypt_ecb_tail(alignment, block_size, encryption_oracle, limit=None):
     align_test_block = B("A" * alignment)
 
     test_block = B("A" * (block_size - 1))
-    align_target_block = B(test_block) # copy
+    align_target_block = B(test_block)  # copy
     distance = 0
 
     decrypted_bytes = []
@@ -59,15 +60,16 @@ def decrypt_ecb_tail(alignment, block_size, encryption_oracle, limit=None):
 
     return B(b''.join(decrypted_bytes))
 
+
 def decrypt_cbc_last_blk_padding_attack(cblocks, bsize, oracle):
     prev_cblock = cblocks[-2]
 
     x = B(range(bsize, 0, -1), mutable=True)
     x ^= prev_cblock
-    for i in range(bsize-1, -1, -1):
+    for i in range(bsize - 1, -1, -1):
         prefix = prev_cblock[:i]
-        padn   = B(bsize-i)
-        posfix = B(padn * (bsize-i-1)) ^ x[i+1:]
+        padn = B(bsize - i)
+        posfix = B(padn * (bsize - i - 1)) ^ x[i + 1:]
 
         # forge the penultimate ciphertext block
         cblocks[-2] = B(prefix + B(0) + posfix, mutable=True)
@@ -84,9 +86,10 @@ def decrypt_cbc_last_blk_padding_attack(cblocks, bsize, oracle):
                 x[i] = (padn ^ B(n))
                 break
 
-    cblocks[-2] = prev_cblock   # restore backup
+    cblocks[-2] = prev_cblock  # restore backup
     x ^= prev_cblock
-    return x    # plain text block
+    return x  # plain text block
+
 
 def decrypt_cbc_padding_attack(ciphertext, bsize, oracle, iv=None):
     p = []

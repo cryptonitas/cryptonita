@@ -1,4 +1,6 @@
 import math
+
+
 def _py_entropy(pk, qk=None, base=None):
     '''
         >>> from cryptonita.stats import _py_entropy    # byexample: +timeout=10
@@ -42,11 +44,12 @@ def _py_entropy(pk, qk=None, base=None):
     else:
         np = sum(pk)
         nq = sum(qk)
-        return - log(np/nq, base) + sum((p * log(p/q, base)) for p, q in zip(pk, qk)) / np
+        return -log(np / nq, base) + sum(
+            (p * log(p / q, base)) for p, q in zip(pk, qk)
+        ) / np
+
 
 try:
     from scipy.stats import entropy
 except ImportError:
     entropy = _py_entropy
-
-

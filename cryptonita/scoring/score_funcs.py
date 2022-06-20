@@ -9,13 +9,13 @@ from langdetect import detect_langs
 
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail, are_same_length_or_fail
-
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.scoring import *
 >>> from cryptonita.scoring.freq import etaoin_shrdlu
 '''
+
 
 def all_ascii_printable(m):
     ''' Score with 1 if the message has only ASCII printable characters.
@@ -35,6 +35,7 @@ def all_ascii_printable(m):
     '''
     are_bytes_or_fail(m, 'm')
     return 1 if all((32 <= b <= 126 or 9 <= b <= 13) for b in m) else 0
+
 
 def all_in_alphabet(m, alphabet):
     ''' Score 1 if all the elements in the message <m> are in the <alphabet>.
@@ -59,6 +60,7 @@ def all_in_alphabet(m, alphabet):
 
     are_bytes_or_fail(m, 'm')
     return 1 if len(set(m) - set(alphabet)) == 0 else 0
+
 
 def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
     '''
@@ -86,8 +88,8 @@ def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
     # don't sum up to N), the missing prob/freq are for the "unexpected" events
     # Make sure it is a non-zero very low frequency
     _min = min(efreq) / 16
-    efreq.append(max(_min, N-sum(efreq)))
-    ofreq.append(N-sum(ofreq))  # the observed unexpected events can be zero
+    efreq.append(max(_min, N - sum(efreq)))
+    ofreq.append(N - sum(ofreq))  # the observed unexpected events can be zero
 
     x = np.arange(len(efreq))
     bins = [0]
@@ -95,10 +97,10 @@ def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
     for i in x:
         current_bin += efreq[i]
         if current_bin > 8:
-            bins.append(i+1)
+            bins.append(i + 1)
             current_bin = 0
     if current_bin > 0:
-        bins.append(x[-1]+1)
+        bins.append(x[-1] + 1)
 
     assert len(efreq) == len(ofreq) == len(x)
 
@@ -109,10 +111,13 @@ def fit_freq_score(m, expected_prob, return_p=False, significance=0.05):
 
     return p if return_p else (0 if p <= significance else 0.5)
 
+
 def good_written_word_score(m, speller, word_weight_fun=len):
-    wfun = (lambda w:1) if word_weight_fun is None else word_weight_fun
+    wfun = (lambda w: 1) if word_weight_fun is None else word_weight_fun
     words = m.split(sep=None)
-    return sum(speller.check(w) * wfun(w) for w in words) / sum(wfun(w) for w in words)
+    return sum(speller.check(w) * wfun(w)
+               for w in words) / sum(wfun(w) for w in words)
+
 
 def good_written_word_bit_score(m, speller):
     words = m.split(sep=None)
@@ -135,8 +140,10 @@ def good_written_word_bit_score(m, speller):
 
     return score / len(words)
 
+
 def is_language(m, language):
     return detect_langs(m)[language]
+
 
 def ngram_entropy_score(m, N=1):
     r'''
@@ -172,6 +179,7 @@ def ngram_entropy_score(m, N=1):
 
     '''
     return m.ngrams(N).entropy()
+
 
 def yes_no_score(m, yes_prob=0.5):
     r'''
@@ -222,6 +230,7 @@ def yes_no_score(m, yes_prob=0.5):
     bits = len(m) * 8
 
     return 1 - stats.binom_test(sucessess, n=bits)
+
 
 def icoincidences(seq, seq2=None, expected=None):
     r'''
@@ -340,13 +349,14 @@ def icoincidences(seq, seq2=None, expected=None):
     '''
     if seq2 is None:
         freqs = seq.freq().values()
-        ic = sum(f * (f-1) for f in freqs) / (len(seq) * (len(seq) - 1))
+        ic = sum(f * (f - 1) for f in freqs) / (len(seq) * (len(seq) - 1))
 
     else:
         are_same_length_or_fail(seq, seq2)
         ic = sum(a == b for a, b in zip(seq, seq2)) / len(seq)
 
     return ic if expected is None else ic / expected
+
 
 def ic_score(m, m2):
     return icoincidences(m, m2)
@@ -392,10 +402,13 @@ def key_length_by_hamming_distance(length, ciphertext):
 
     l = length
     if len(ciphertext) < l * 2:
-        raise ValueError("The ciphertext is too short to guess the key's length and it is impossible to see if a key of %i bytes could be possible." % l)
+        raise ValueError(
+            "The ciphertext is too short to guess the key's length and it is impossible to see if a key of %i bytes could be possible."
+            % l
+        )
 
-    distance = B(ciphertext[:l]).hamming_distance(B(ciphertext[l:l*2]))
-    return 1 - (distance / (l*8))
+    distance = B(ciphertext[:l]).hamming_distance(B(ciphertext[l:l * 2]))
+    return 1 - (distance / (l * 8))
 
 
 def key_length_by_ic(length, ciphertext):

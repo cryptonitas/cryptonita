@@ -3,13 +3,13 @@ import collections
 import itertools
 import functools
 from operator import itemgetter, mul as mul_func
-
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
 >>> from cryptonita.fuzzy_set import *
 
 '''
+
 
 class FuzzySet(dict, collections.Set):
     # TODO talk about this!
@@ -78,23 +78,31 @@ class FuzzySet(dict, collections.Set):
             iterable = ((k, pr) for (k, pr) in iterable if pr > min_membership)
 
         else:
-            iterable = ((k, pr) for (k, pr) in iterable.items() if pr > min_membership)
+            iterable = (
+                (k, pr) for (k, pr) in iterable.items() if pr > min_membership
+            )
 
         dict.__init__(self, iterable)
         [self._check_probability(k, pr) for k, pr in self.items()]
 
     def __repr__(self):
         items = sorted(self.items(), key=itemgetter(1, 0), reverse=True)
-        return '{' + ', '.join('%s -> %0.4f' % (repr(k),p) for k,p in items) + '}'
+        return '{' + ', '.join(
+            '%s -> %0.4f' % (repr(k), p) for k, p in items
+        ) + '}'
 
     def _check_probability(self, elem, prob, about_min_membership=False):
         if not (0 <= prob <= 1):
             if about_min_membership:
-                raise ValueError("The minimum membership is %0.4f but it must be a value between 0 and 1."
-                                        % (prob))
+                raise ValueError(
+                    "The minimum membership is %0.4f but it must be a value between 0 and 1."
+                    % (prob)
+                )
             else:
-                raise ValueError("The membership of %s is %0.4f but it must be a value between 0 and 1."
-                                        % (repr(elem), prob))
+                raise ValueError(
+                    "The membership of %s is %0.4f but it must be a value between 0 and 1."
+                    % (repr(elem), prob)
+                )
 
     def copy(self):
         return FuzzySet(self, min_membership=self.min_membership)
@@ -113,7 +121,9 @@ class FuzzySet(dict, collections.Set):
             ('a', 'b')
 
             '''
-        nlargest = heapq.nlargest(1 if n == None else n, self.items(), key=itemgetter(1))
+        nlargest = heapq.nlargest(
+            1 if n == None else n, self.items(), key=itemgetter(1)
+        )
         if n == None:
             return nlargest[0][0]
         else:
@@ -247,7 +257,7 @@ class FuzzySet(dict, collections.Set):
         '''
         s = sum(pr for pr in self.values())
         if s > 0:
-            self.scale(1.0/s)
+            self.scale(1.0 / s)
 
     def update(self, other):
         r'''Perform the union of this set and the <other> and update self
@@ -376,6 +386,7 @@ class FuzzySet(dict, collections.Set):
     def join(iterable, cut_off, j):
         return join_fuzzy_sets(iterable, cut_off, j)
 
+
 def join_fuzzy_sets(iterable, cut_off, j):
     r'''
         Join the given fuzzy sets and return a single one.
@@ -423,12 +434,15 @@ def join_fuzzy_sets(iterable, cut_off, j):
     if cut_off >= 1:
         counters = [len(fs) for fs in iterable]
 
-        vals = [[(pr, idx) for pr in fs.values()] for idx, fs in enumerate(iterable)]
+        vals = [
+            [(pr, idx) for pr in fs.values()]
+            for idx, fs in enumerate(iterable)
+        ]
         vals = sorted(sum(vals, []))
 
         for _, idx in vals:
             if counters[idx] == 1:
-                continue    # skip it, at least 1 key of each fuzzy set must survive
+                continue  # skip it, at least 1 key of each fuzzy set must survive
 
             counters[idx] -= 1
 
@@ -439,13 +453,12 @@ def join_fuzzy_sets(iterable, cut_off, j):
         sets = []
         for fs, counter in zip(iterable, counters):
             fs = fs.copy()
-            fs.cut_off(counter)     # TODO optimize this
+            fs.cut_off(counter)  # TODO optimize this
             sets.append(fs)
 
         upper_set = join_fuzzy_sets(sets, cut_off=0.0, j=j)
         upper_set.cut_off(cut_off)
         return upper_set
-
 
     all_possibilities = itertools.product(*(fs.items() for fs in iterable))
 
@@ -467,9 +480,9 @@ def join_fuzzy_sets(iterable, cut_off, j):
     # build up the fuzzy set
     return FuzzySet(dict(tmp))
 
+
 def len_join_fuzzy_sets(iterable):
     x = 1
     for k in iterable:
         x *= len(k)
     return x
-

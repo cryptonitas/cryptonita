@@ -2,7 +2,7 @@
 
 __version__ = "0.3.0"
 
-_author  = 'Di Paola Martin'
+_author = 'Di Paola Martin'
 _license = 'GNU GPLv3'
 _url = ' - '
 
@@ -25,5 +25,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 try:
     from .conv import B, load_bytes
 except ImportError:
-    pass    # this happens when importing from setup.py
-
+    pass  # this happens when importing from setup.py
