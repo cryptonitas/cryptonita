@@ -1,5 +1,6 @@
 import heapq
 import collections
+import collections.abc
 import itertools
 import functools
 from operator import itemgetter, mul as mul_func
@@ -11,7 +12,7 @@ from operator import itemgetter, mul as mul_func
 '''
 
 
-class FuzzySet(dict, collections.Set):
+class FuzzySet(dict, collections.abc.Set):
     # TODO talk about this!
     def __init__(self, iterable=(), pr=None, min_membership=0.0):
         ''' Create a FuzzySet from an iterable.

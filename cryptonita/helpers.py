@@ -1,4 +1,5 @@
 import collections
+import collections.abc
 '''
 >>> from cryptonita.helpers import bisect_left_rev, bisect_right_rev
 '''
@@ -11,7 +12,7 @@ def are_same_length_or_fail(a, b):
 
 
 def are_bytes_or_fail(val, name):
-    if not isinstance(val, collections.ByteString):
+    if not isinstance(val, collections.abc.ByteString):
         raise TypeError("The parameter '%s' should be a bytes-like instance but it is %s." % \
                             (name, type(val)))
 
