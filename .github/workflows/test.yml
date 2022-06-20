@@ -1,0 +1,32 @@
+name: test
+on: [pull_request]
+jobs:
+  lib-test:
+    name: "Cryptonita Python ${{ matrix.python-version }}"
+    runs-on: ubuntu-latest
+    strategy:
+        matrix:
+            python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+    env:
+        TERM: xterm-color
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: make deps-dev
+      - run: make lib-test
+      - run: make docs-test
+
+  source-code-test:
+    name: "Source code"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.6"
+      - run: make deps-dev
+      - run: make format-test
