@@ -9,6 +9,7 @@ from langdetect import detect_langs
 
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail, are_same_length_or_fail
+from cryptonita.metrics import icoincidences
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
@@ -230,132 +231,6 @@ def yes_no_score(m, yes_prob=0.5):
     bits = len(m) * 8
 
     return 1 - stats.binom_test(sucessess, n=bits)
-
-
-def icoincidences(seq, seq2=None, expected=None):
-    r'''
-        Take the sequence <seq> that can be:
-         - a ByteString
-         - a Nblocks view
-         - a Ngrams view
-         - any other object that support SequenceStatsMixin.freq method.
-
-        For the given sequence see how many items are repeated:
-        count the coincidences; higher
-        values means that the <seq> is less random. [1]
-
-        Mathematically,
-            Sum for all i { (ni * (ni-1)) / (N * (N-1)) }
-
-        where <ni> is the count of items <i> and <N> is the count of all the
-        items seen.
-        The result is a number between 0 (uniform random) and 1 (totally biased
-        not random at all).
-
-        For example, in the given file are 327 random strings. One of them
-        is actually a message encrypted by doing a xor with a key of just 1 byte.
-        Therefore, it should have more coincidences than the rest of the strings.
-
-        >>> ciphertexts = open('test/ds/4.txt', 'rb').read().strip().split(b'\n')
-        >>> ciphertexts = [B(c, encoding=16) for c in ciphertexts]
-
-        >>> scores_and_indexes = [(icoincidences(c), i) \
-        ...                         for i, c in enumerate(ciphertexts)]
-
-        Remember, higher values are better
-
-        >>> max(scores_and_indexes)
-        (0.045977<...>, 170)
-
-        Let's check if the 170th string is our ciphered message
-
-        >>> key = B('5') # i am doing a little cheat here to speed up the things
-
-        >>> ciphertexts[170] ^ key.inf()
-        'Now that the party is jumping\n'
-
-        If a second sequence <seq2> is provided, <icoincidences> will
-        return the Index of Coincidence considering coincidences pair by pair
-
-        Mathematically,
-            Sum for all i { 1 if seq1[i] == seq2[i] else 0 } / N
-
-            where <N> is the length of the sequence
-
-        >>> icoincidences(ciphertexts[43], ciphertexts[12])
-        0.033<...>
-
-        >>> icoincidences(ciphertexts[12], ciphertexts[170])
-        0.0
-
-        In this mode, icoincidences gives an idea of how similar are
-        the sequences. We can see that the non-random string (170th)
-        is very different than the rest.
-
-        The result is a number between 0 (very different) and 1 (identical)
-        and it is a symmetric operation.
-
-        If <expected> is given, the returned IC will be the *relative*
-        IC respect with the <expected> probability of a coincidence.
-
-        Mathematically,
-            icoincidences(seq, expected=e) == icoincidences(seq) / e
-
-        See equation 13 of [2] (in the paper, the value c is our 1/<expected>)
-
-        Typically it comes from a theorical "expected" value (1/256 for
-        a truly random sequence of bytes; 1/26 (0.0385) for a truly random
-        sequence of letters of a 26-letters alphabet like the used in English)
-
-        >>> 1/icoincidences(ciphertexts[12], expected=1/256)
-        0.424<...>
-
-        >>> icoincidences(ciphertexts[43], expected=1/256)
-        0.588<...>
-
-        >>> 1/icoincidences(ciphertexts[170], expected=1/256)
-        0.0849<...>
-
-        Note: because the relative IC can be any positive number, to
-        compare those three I inverted the result if the number was greater
-        than 1 making all of them between 0 and 1 and comparable.
-        Notice how the relative IC of the 170th ciphertext is far from 1
-        (random).
-
-        We can do the same with the IC of two sequences:
-
-        >>> icoincidences(ciphertexts[43], ciphertexts[12], expected=1/256)
-        8.533<...>
-
-        See the example 1 of [2] (in the paper, the value c is our 1/<expected>)
-
-        The icoincidences function works over ngrams too:
-
-        >>> icoincidences(ciphertexts[170].ngrams(2))
-        0.0049<...>
-
-        >>> icoincidences(ciphertexts[43].ngrams(2))
-        0.0
-
-        >>> icoincidences(ciphertexts[12].ngrams(2), ciphertexts[43].ngrams(2))
-        0.0
-
-        References:
-
-        [1] Index of coincidence: https://en.wikipedia.org/wiki/Index_of_coincidence
-        [2] The Index of Coincidence; Howard H Campaigne
-        [3] Index of Coincidence Explained: https://eldipa.github.io/book-of-gehn/articles/2019/10/04/Index-of-Coincidence.html
-
-    '''
-    if seq2 is None:
-        freqs = seq.freq().values()
-        ic = sum(f * (f - 1) for f in freqs) / (len(seq) * (len(seq) - 1))
-
-    else:
-        are_same_length_or_fail(seq, seq2)
-        ic = sum(a == b for a, b in zip(seq, seq2)) / len(seq)
-
-    return ic if expected is None else ic / expected
 
 
 def ic_score(m, m2):
