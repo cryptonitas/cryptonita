@@ -1,7 +1,7 @@
 
 ## Loading the Byte Strings
 
-The building block in ``cryptonita`` is the *byte string*: a finite
+The building block in `cryptonita` is the *byte string*: a finite
 immutable sequence of bytes.
 
 ```python
@@ -11,7 +11,7 @@ immutable sequence of bytes.
 'hello world!'
 ```
 
-``B`` accepts a quite large range of inputs doing any conversion
+`B` accepts a quite large range of inputs doing any conversion
 to bytes behind the scenes.
 
 ```python
@@ -30,7 +30,7 @@ b'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ=='
 ```
 
 For the full list of conversions see
-[cryptonita/conv.py's as_bytes](https://github.com/cryptonitas/cryptonita/tree/master/cryptonita/conv.py)
+[cryptonita/conv.py's `as_bytes`](https://github.com/cryptonitas/cryptonita/tree/master/cryptonita/conv.py)
 
 We also have a shortcut to read a *serie* of byte strings
 from a file:
@@ -44,6 +44,6 @@ from a file:
 ```
 
 Take at look at
-[cryptonita/conv.py's load_bytes](https://github.com/cryptonitas/cryptonita/tree/master/cryptonita/conv.py)
+[cryptonita/conv.py's `load_bytes`](https://github.com/cryptonitas/cryptonita/tree/master/cryptonita/conv.py)
 and keep the party jumping!
 

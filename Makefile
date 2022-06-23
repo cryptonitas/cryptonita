@@ -30,7 +30,7 @@ deps-dev: deps
 	pip install -r requirements-dev.txt
 
 lib-test: clean_test
-	@byexample @test/minimum.env -- README.md cryptonita/*.py cryptonita/**/*.py
+	@byexample @test/minimum.env -- cryptonita/*.py cryptonita/**/*.py
 	@make -s clean_test
 
 docs-test: clean_test
