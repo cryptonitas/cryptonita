@@ -4,3 +4,4 @@ __pycache__
 .coverage
 .*.swp
 cryptonita.egg-info/
+README.rst

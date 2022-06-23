@@ -12,7 +12,31 @@ here = path.abspath(path.dirname(__file__))
 # load __version__, __doc__, _author, _license and _url
 exec(open(path.join(here, 'cryptonita', '__init__.py')).read())
 
-long_description = __doc__
+here = path.abspath(path.dirname(__file__))
+
+try:
+    system('''pandoc -f markdown-raw_html -o '%(dest_rst)s' '%(src_md)s' ''' % {
+                'dest_rst': path.join(here, 'README.rst'),
+                'src_md':   path.join(here, 'README.md'),
+                })
+
+    with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+        long_description = f.read()
+
+    # strip out any HTML comment|tag
+    long_description = re.sub(r'<!--.*?-->', '', long_description,
+                                                flags=re.DOTALL|re.MULTILINE)
+    long_description = re.sub(r'<img.*?src=.*?>', '', long_description,
+                                                flags=re.DOTALL|re.MULTILINE)
+
+    with open(path.join(here, 'README.rst'), 'w', encoding='utf-8') as f:
+        f.write(long_description)
+
+except:
+    print("Generation of the documentation failed. " + \
+          "Do you have 'pandoc' installed?")
+
+    long_description = __doc__
 
 install_deps=[
         'scipy',
