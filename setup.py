@@ -87,11 +87,12 @@ setup(
         'Programming Language :: Python :: 3',
     ],
 
+    # Let setuptools to find all the packages (aka modules and submodules)
+    # automatically for us
+    packages=find_packages(),
     python_requires='>=3.3',
     install_requires=install_deps + optional_deps,
 
     keywords='crypto cryptography crypto-analysis',
-
-    packages=['cryptonita'],
 )
 
