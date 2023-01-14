@@ -13,7 +13,7 @@ from collections.abc import Iterable, Callable
 class ImmutableByteString(
     SequenceMixin, ByteStatsMixin, SequenceStatsMixin, bytes
 ):
-    ''' Enhanced version of a immutable byte string.
+    ''' Enhanced version of an immutable byte string.
 
             >>> s = B(b'ABA')
             >>> isinstance(s, bytes) and type(s) != bytes
@@ -33,7 +33,7 @@ class ImmutableByteString(
             >>> list(s.iduplicates(distance=1, idx_of='first'))
             [0]
 
-        For convenience, iterating a ImmutableByteString yields integers
+        For convenience, iterating an ImmutableByteString yields integers
         like 'bytes'
 
             >>> list(s)
