@@ -13,3 +13,13 @@ repos:
     -   id: yapf
         args: [-i, --style=.style.yapf]
         files: ^cryptonita/
+-   repo: local
+    hooks:
+    -   id: check-secrets
+        name: check secrets in files
+        language: script
+        entry: .check-secrets.sh
+        always_run: true
+        verbose: true
+        stages: ["push"]
+
