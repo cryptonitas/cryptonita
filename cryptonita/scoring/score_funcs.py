@@ -313,7 +313,7 @@ def key_length_by_hamming_distance(ciphertext, length):
     return 1 - (max_distance / (l * 8))
 
 
-def key_length_by_ic(length, ciphertext):
+def key_length_by_ic(ciphertext, length):
     ''' Score the possible <length> of the key that was used to encrypt
         and obtain the <ciphertext> using the Index of Coincidence (IC).
 
