@@ -5,3 +5,4 @@ __pycache__
 .*.swp
 cryptonita.egg-info/
 README.rst
+.check-secrets-impl.sh
