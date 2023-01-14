@@ -182,39 +182,6 @@ def freq_attack(
     return keys
 
 
-def guess_key_length(
-    ciphertext, length_space, score_func, min_score=0.5, **score_func_params
-):
-    ''' Guess the length of the key that was used to cipher
-        the given ciphertext.
-
-        The possible lengths will be determined by <length_space>:
-         - if it is a int, assume a range from 1 to <length_space>
-         - otherwise, <length_space> needs to be an iterable of possible lengths
-
-        For each possible length, score each one using <score_func> and
-        drop anyone with a score of <min_score> or less.
-
-        Extra parameters can be passed to the <score_func> using
-        <score_func_params>.
-
-        Return a FuzzySet with the lengths guessed.
-        '''
-    assert 0.0 <= min_score <= 1.0
-    are_bytes_or_fail(ciphertext, 'ciphertext')
-
-    if isinstance(length_space, int):
-        length_space = range(1, length_space + 1)
-
-    params = score_func_params
-    lengths = FuzzySet(
-        ((l, score_func(l, ciphertext, **params)) for l in length_space),
-        pr='tuple',
-        min_membership=min_score
-    )
-    return lengths
-
-
 def correct_key(key, ciphertexts, suggester):
     ''' Use <key> to decrypt each <ciphertext> and for each plaintext
         try to correct the <key> to improve the quality of the plaintexts
