@@ -237,16 +237,23 @@ def ic_score(m, m2):
     return icoincidences(m, m2)
 
 
-def key_length_by_hamming_distance(length, ciphertext):
+def key_length_by_hamming_distance(ciphertext, length):
     ''' Score how much likely is <length> to be the length of the key
-        which was used to encrypt and obtain the ciphertext.
+        which was used to encrypt and obtain the ciphertext (for a xor cipher)
 
         This estimate is done using the hamming distance.
 
         If K is a random uniform distributed key space, k one key from that
-        space and ki and kj two bytes of that key.
+        space and ki and kj two bytes of that key where they are l bytes
+        separated between.
+
+        In other words:
+
+            ki = k[x]
+            kj = k[x+l]
 
         For the ci and cj ciphertext bytes we have:
+
             pi = ci ^ ki   and   pj = cj ^ kj
 
         then, the hamming distance will be:
@@ -254,20 +261,26 @@ def key_length_by_hamming_distance(length, ciphertext):
             h(ci, cj) = sum_1s((pi ^ ki) ^ (pj ^ kj))
                       = sum_1s((pi ^ pj) ^ (ki ^ kj))
 
-        now if ki == kj, the hamming distance will be
+        When ki != kj, then ki ^ kj is a random uniform distributed byte so
+        (pi ^ pj) ^ (ki ^ kj) is also a random uniform distributed byte
+        and the expected count of 1s is half (4 bits for a 8-bits byte)
+
+        Consider now that we are in the lucky case of ki == kj,
+        the hamming distance will be:
 
             h(ci, cj) = sum_1s((pi ^ pj))
 
-        If the plaintext space is *not* uniform distributed, the count of 1s
-        of pi ^ pj will be smaller (pi and pj are similar)
+        If we assume the plaintext space is *not* uniform distributed,
+        so the count of 1s of pi ^ pj will be significantly smaller
+        than 4 so the hamming distance will be smaller than 4.
 
-        If ki != kj, then ki ^ kj is a random uniform distributed byte so
-          (pi ^ pj) ^ (ki ^ kj) is also a random uniform distributed byte
-        and the expected count of 1s is half (4 bits for a 8-bits byte)
+        In other words, assuming that the plaintext is *not* uniform,
+        pi and pj are similar.
 
-        With this we can discriminate when ki == kj or not
+        This will indicate that we chosen ki and kj such they are the same,
+        so indeed we found a candidate length for the secret k.
 
-        However this assumes two thing:
+        As stated before, this length estimation assumes two things:
          - K is a random uniform distributed key string
          - P is *not* a random uniform distributed plaintext string.
 
@@ -282,8 +295,22 @@ def key_length_by_hamming_distance(length, ciphertext):
             % l
         )
 
-    distance = B(ciphertext[:l]).hamming_distance(B(ciphertext[l:l * 2]))
-    return 1 - (distance / (l * 8))
+    # This computes how many bits differ between two consecutive
+    # blocks of length l
+    # Keep the maximum difference
+    max_distance = 0
+    cblocks = ciphertext.nblocks(l)
+    for a, b in zip(cblocks[:-1], cblocks[1:]):
+        if len(b) < l:
+            # this may happen if the original ciphertext has a total length
+            # not divisible by l, so the last block will have less bytes
+            # In that case we discard it
+            break
+
+        max_distance = max(a.hamming_distance(b), max_distance)
+
+    # Compute the score normalizing the distance
+    return 1 - (max_distance / (l * 8))
 
 
 def key_length_by_ic(length, ciphertext):
