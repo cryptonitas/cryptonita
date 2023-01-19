@@ -234,6 +234,9 @@ class ImmutableByteString(
         deletechars = bytes(delete_set)
         return super().translate(table, deletechars)
 
+    def tomutable(self):
+        return MutableByteString(self)
+
 
 class MutableByteString(MutableSequenceMixin, bytearray):
     ''' Enhanced version of a mutable byte string.
