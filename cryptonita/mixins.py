@@ -37,6 +37,66 @@ class SequenceMixin:
 
         return v
 
+    def splice(self, pos, sz, ins=None, ret_deleted=False):
+        ''' Delete <sz> elements starting from the <pos> position.
+
+            >>> a = B(b'ABCD')
+            >>> a.splice(0, 1)  # equivalent to a[1:]
+            'BCD'
+
+            Negative positions are allowed following the same
+            semantics that any indexing/slicing operation in Python
+
+            >>> a.splice(-1, 1) # equivalent to a[:-1]
+            'ABC'
+
+            >>> a.splice(-2, 2) # equivalent to a[:-2]
+            'AB'
+
+            >>> a.splice(-2, 1) # equivalent to a[:-2] + a[-1:]
+            'ABD'
+
+            Negative sizes are not allowed.
+
+            >>> a.splice(0, -1) # bad
+            Traceback<...>
+            ValueError: Negative sizes are not allowed (given -1)
+
+            If <ret_deleted> is True, return the new spliced sequence
+            and the deleted sub-sequence; otherwise return the new
+            spliced only.
+
+            >>> a.splice(-2, 2, ret_deleted=True) # equivalent to a[:-2], a[-2:]
+            ('AB', 'CD')
+
+            If <ins> is not None, insert that sequence at <pos> after
+            the deletion.
+
+            >>> a.splice(-2, 2, ins=B(b'X'), ret_deleted=True) # equivalent to a[:-2] + X, a[-2:]
+            ('ABX', 'CD')
+
+            >>> a.splice(1, 0, ins=B(b'XY')) # equivalent to a[:1] + XY + a[1:]
+            'AXYBCD'
+            '''
+        if pos < 0:
+            pos = len(self) + pos
+
+        if sz < 0:
+            raise ValueError(f"Negative sizes are not allowed (given {sz})")
+
+        if ret_deleted:
+            dels = self[pos:pos + sz]
+
+        if not ins:
+            new = self[:pos] + self[pos + sz:]
+        else:
+            new = self[:pos] + ins + self[pos + sz:]
+
+        if ret_deleted:
+            return new, dels
+        else:
+            return new
+
     def copy(self):
         return type(self)(super().copy())  # TODO, double copy?
 
@@ -360,6 +420,13 @@ class MutableSequenceMixin(SequenceMixin):
                 >>> a
                 'AXB4'
 
+            If you need to insert N bytes in a slice larger or smaller than N
+            you can use isplice().
+
+            As it is more common to use __setitem__ to replace N bytes by
+            another N bytes without adding/removing bytes,
+            this restriction on __setitem__ is to catch silly errors when
+            the size of the input mismatches the size of the destination slice.
             '''
         if isinstance(idx, slice):
             start, stop, step = idx.indices(len(self))
@@ -379,6 +446,49 @@ class MutableSequenceMixin(SequenceMixin):
             val = val[0]
 
         return super().__setitem__(idx, val)
+
+    def isplice(self, pos, sz, ins=None, ret_deleted=False):
+        ''' In-place variation of splice().
+
+            By default returns None if <ret_deleted> is False
+            or the deleted elements otherwise.
+
+            In any case the deletion+insertion happen in-place.
+
+            >>> a = B(b'ABCD', mutable=True)
+
+            >>> a.isplice(1, 2) # equivalent to del a[1:3]
+            >>> a
+            'AD'
+
+            Note how at difference with __setitem__, isplice allows
+            to replace N elems by M elems with N != M.
+
+            For example, replacing 1 byte by 3:
+
+            >>> a.isplice(1, 1, B(b'XYZ'))  # equivalent to a[1:2] = XY
+            >>> a
+            'AXYZ'
+        '''
+
+        if pos < 0:
+            pos = len(self) + pos
+
+        if sz < 0:
+            raise ValueError(f"Negative sizes are not allowed (given {sz})")
+
+        if ret_deleted:
+            dels = self[pos:pos + sz]
+
+        if not ins:
+            del self[pos:pos + sz]
+        else:
+            # Call super's because the __setitem__ of MutableSequenceMixin
+            # will fail with an exception if len(ins) != sz
+            super().__setitem__(slice(pos, pos + sz), ins)
+
+        if ret_deleted:
+            return dels
 
     def __ixor__(self, other):
         ''' xor <other> with <self> in place.
