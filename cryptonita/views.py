@@ -6,6 +6,7 @@
 import math
 import itertools
 from cryptonita.helpers import indices_from_slice_or_index
+from cryptonita.conv import as_bytes
 
 
 class InfiniteStream:
@@ -16,7 +17,12 @@ class InfiniteStream:
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
-            raise TypeError("We don't support slicing (yet).")
+            n = len(self.base)
+            start, stop, step = idx.start, idx.stop, idx.step
+            start = start or 0
+            step = step or 1
+
+            return as_bytes(self.base[i % n] for i in range(start, stop, step))
 
         return self.base[idx % len(self.base)]
 
