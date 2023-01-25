@@ -146,24 +146,24 @@ A IC of 0.02 is too low. It seems that 8 is not the length of the key.
 We could do a loop to try other lengths but `cryptonita` already has that
 
 ```python
+>>> from cryptonita.scoring import scoring
 >>> from cryptonita.scoring import key_length_by_ic
->>> from cryptonita.attacks import guess_key_length
 
->>> gklength = guess_key_length(
-...                         ctext,
-...                         length_space=range(5, 25),
-...                         score_func=key_length_by_ic,
-...                         min_score=0.025
-...                         )
+>>> gklength = scoring(
+...                     ctext,
+...                     space=range(5, 25),
+...                     score_func=key_length_by_ic,
+...                     min_score=0.025,
+... )
 ```
 
 Okay, what is that?
 
- - `guess_key_length` does a brute force *attack* computing a *score
+ - `scoring` does a brute force *attack* computing a *score
 function* testing every possible length from 5 to 25.
- - `key_length_by_ic` is a *scores* how good the tested length is. It
-puts a score between 0 (bad) and 1 (good) using the Index of
-Coincidence (like the `icoincidences`).
+ - `key_length_by_ic` is a *scores* how good the tested length is.
+It puts a score between 0 (bad) and 1 (good) using the Index of
+Coincidence.
 
 You may think that `gklength` is the **the** guessed key but in
 cryptoanalysis you mostly never work with a *specific* value. You work
