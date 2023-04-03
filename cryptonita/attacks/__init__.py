@@ -2,7 +2,7 @@ from cryptonita.fuzzy_set import FuzzySet
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail
 
-from itertools import product, zip_longest
+from itertools import product, zip_longest, islice
 from operator import xor
 '''
 >>> # Convenient definitions
@@ -202,27 +202,51 @@ def correct_key(key, ciphertexts, suggester):
     return corrections
 
 
-def search(start, stop, oracle, likely=None):
-    ''' Search the first value in the range <start>:<stop>
+def search(space, oracle, cnt=1, default=None):
+    ''' Search the first value in the <space>
         that statisfy the <oracle> condition.
 
         >>> def is_4(i):
         ...     print("%i == 4?" % i)
         ...     return i == 4
 
-        >>> search(2, 10, is_4)
+        >>> search(range(2, 5), is_4)
         2 == 4?
         3 == 4?
         4 == 4?
         4
 
-        The <likely> optional parameter control from where the search
-        should start. By default (<likely>==None), starts from
-        the begin (<start>).
+        The <space> can be any generator / iterator / sequence
+        (anything that supports __iter__).
 
-        But other values are possible like backward:
+        From cryptonita.space you can find some specialized space
+        definitions.
 
-        >>> search(2, 10, is_4, likely='backward')
+        For example, IntSpace is simil to Python's range() but
+        support arbitrary starting points so you can explore
+        a range of integers from the middle to the extremes.
+
+        >>> from cryptonita.space import IntSpace
+
+        >>> search(IntSpace(2, 10, start='middle'), is_4)
+        6 == 4?
+        5 == 4?
+        7 == 4?
+        4 == 4?
+        4
+
+        >>> search(IntSpace(2, 10, start=8), is_4)
+        8 == 4?
+        7 == 4?
+        9 == 4?
+        6 == 4?
+        10 == 4?
+        5 == 4?
+        4 == 4?
+        4
+
+        >>> search(IntSpace(2, 10, start='end'), is_4)
+        10 == 4?
         9 == 4?
         8 == 4?
         7 == 4?
@@ -231,44 +255,47 @@ def search(start, stop, oracle, likely=None):
         4 == 4?
         4
 
-        From the middle point (notice how the search expands from the
-        middle to the extremes):
+        With <cnt> you can control how many elements are returned (1 by default).
+        The return is an iterator
 
-        >>> search(2, 10, is_4, likely='middle')
-        6 == 4?
-        5 == 4?
-        7 == 4?
-        4 == 4?
-        4
+        >>> def is_even(i):
+        ...     print("is %i even?" % i)
+        ...     return i % 2 == 0
 
-        Or just from an arbitrary point:
-        >>> search(2, 10, is_4, likely=8)
-        8 == 4?
-        7 == 4?
-        9 == 4?
-        6 == 4?
-        5 == 4?
-        4 == 4?
-        4
+        >>> list(search(range(10), is_even, cnt=3))
+        is 0 even?
+        is 1 even?
+        is 2 even?
+        is 3 even?
+        is 4 even?
+        [0, 2, 4]
 
+        The special value `all` can be used to do a full exploration
+        of the space:
+
+        >>> list(search(range(10), is_even, cnt='all'))
+        <...>
+        [0, 2, 4, 6, 8]
     '''
 
-    assert start <= stop
-    if likely is None:
-        likely = start
-    elif likely == 'middle':
-        likely = ((stop + start) // 2)
-    elif likely == 'backward':
-        likely = stop
+    # TODO: add limits to search like max count of elements to explore
+    # or time to do the search.
+    # Can be the search paused and restored later? pickled/serialized?
+    if cnt == 1:
+        return next((s for s in space if oracle(s)), default)
 
-    assert start <= likely <= stop
+    elif isinstance(cnt, int):
+        if cnt <= 0:
+            raise ValueError(
+                f"Count of elements to search must be positive but {cnt} was found."
+            )
 
-    lower = range(likely - 1, start - 1, -1)
-    higher = range(likely, stop)
+        return islice((s for s in space if oracle(s)), cnt)
 
-    for i, j in zip_longest(higher, lower):
-        if i is not None and oracle(i):
-            return i
+    elif isinstance(cnt, str):
+        if cnt != 'all':
+            raise ValueError(
+                f"Unexpected count '{cnt}'. Accepted values are: 'all'."
+            )
 
-        if j is not None and oracle(j):
-            return j
+        return (s for s in space if oracle(s))
