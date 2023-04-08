@@ -146,7 +146,11 @@ def as_bytes(raw, encoding='ascii', mutable=False):
         raw = raw.replace(b' ', b'').replace(b'\n', b'')
         if encoding == 16:
             raw = raw.upper()
-        raw = getattr(base64, 'b%idecode' % encoding)(raw)
+
+        if encoding == 58:
+            raw = base58.b58decode(raw)
+        else:
+            raw = getattr(base64, 'b%idecode' % encoding)(raw)
 
     return MutableByteString(raw) if mutable else ImmutableByteString(raw)
 
@@ -379,7 +383,7 @@ B.join = join_bytestrings
 # Push all the imports to the bottom of the file so anyone wanting to import
 # and use as_bytes and others can do it without cycling imports
 # This is true for imports of as_bytes by *ByteString and their dependencies.
-import base64, bisect, struct, itertools
+import base64, base58, bisect, struct, itertools
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
 import numpy as np

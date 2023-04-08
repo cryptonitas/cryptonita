@@ -43,6 +43,7 @@ install_deps=[
         'langdetect',
         'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
         'z3-solver',
+        'base58',
         ]
 
 optional_deps=[

@@ -1,5 +1,5 @@
 from cryptonita.helpers import are_same_length_or_fail, are_bytes_or_fail
-import base64
+import base64, base58
 '''
 >>> # Convenient definitions
 >>> from cryptonita import B           # byexample: +timeout=10
@@ -283,6 +283,9 @@ class SequenceMixin:
                 >>> isinstance(t, str)
                 True
             '''
+
+        if base == 58:
+            return base58.b58encode(self)
 
         return getattr(base64, 'b%iencode' % base)(self)
 
