@@ -17,6 +17,7 @@ def md4(
     h1=0xEFCDAB89,
     h2=0x98BADCFE,
     h3=0x10325476,
+    forged_message_len=None,
 ):
     '''
     >>> md4(b'')
@@ -29,13 +30,18 @@ def md4(
     '501af1ef4b68495b5b7e37b15b4cda68'
     '''
 
+    msg = bytes(msg)
+
     mask = 0xFFFFFFFF
 
     # Pre-processing: Total length is a multiple of 512 bits.
     ml = len(msg) * 8
     msg += b"\x80"
     msg += b"\x00" * (-(len(msg) + 8) % 64)
-    msg += struct.pack("<Q", ml)
+    if forged_message_len is None:
+        msg += struct.pack("<Q", ml)
+    else:
+        msg += struct.pack("<Q", forged_message_len * 8)
 
     # Process the message in successive 512-bit chunks.
     chunks = [msg[i:i + 64] for i in range(0, len(msg), 64)]
