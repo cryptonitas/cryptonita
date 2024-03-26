@@ -346,6 +346,17 @@ def repack(iterable, ifmt, ofmt):
         >>> list(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
         [b'\xaa', b'\xbb', b'\xcc', b'\xdd', b'\xa1', b'\xb2', b'\xc3', b'\xd4']
 
+        To get a single Bytes object you could do:
+
+        >>> B.join(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
+        '\xaa\xbb\xcc\xdd\xa1\xb2\xc3\xd4'
+
+        And from bytes to integers:
+
+        >>> a, b = list(repack(B('ABCDAABB').nblocks(4), ifmt='>4s', ofmt='>I'))
+        >>> hex(a), hex(b)
+        ('0x41424344', '0x41414242')
+
         Any input/output formats are valid as long as they have the same
         'size':
 
