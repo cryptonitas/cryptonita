@@ -6,3 +6,4 @@ __pycache__
 cryptonita.egg-info/
 README.rst
 .check-secrets-impl.sh
+.pypirc
