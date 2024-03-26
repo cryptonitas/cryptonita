@@ -62,33 +62,19 @@ def clone_mt19937(out):
     ''' Clone the internal state of a Mersenne Twister 19937 (MT19937)
         from its output <out>.
 
-        For MT19937 we need 624 sequential bytes at minimum to clone
+        For MT19937 we need 624 sequential numbers at minimum to clone
         the state.
 
             >>> from cryptonita.attacks.prng import clone_mt19937
-            >>> clone_mt19937(B('abc'))           # byexample: +norm-ws
+            >>> clone_mt19937([1, 2, 3])           # byexample: +norm-ws
             Traceback <...>
-            ValueError: You need at least 624 bytes to clone the MT19937 PRNG
+            ValueError: You need at least 624 numbers to clone the MT19937 PRNG
                         but you have only 3.
-
-        With 624+n, the first 624 are used to clone the
-        MT19937's state and the next byte is used to validate.
-
-        If the validation fails, "shift to the right one byte": the first
-        byte is ignored, the next 624 bytes are used to re-clone the state
-        and the next byte is used to validate the generator.
-        The process continues until one validation success or until reach the
-        end of the string.
-
-        The last cloned MT19937 cannot be validated.
-
-        Given 624 bytes only, no validation is performed; given 624*2 bytes,
-        it is guaranteed that a valid clone can be found.
         '''
 
     n = 624
     if len(out) < n:
-        raise ValueError(("You need at least %i bytes to clone the MT19937 PRNG" +\
+        raise ValueError(("You need at least %i numbers to clone the MT19937 PRNG" +\
                           " but you have only %i.") % (n, len(out)))
 
     u, d = 11, 0xffffffff
@@ -98,6 +84,7 @@ def clone_mt19937(out):
 
     state = []
     for y in out:
+        assert isinstance(y, int)
         y = inv_right_shift(y, l, 0xffffffff)  # inv of y ^ ((y >> l) & 0)
         y = inv_left_shift(y, t, c)  # inv of y ^ ((y << t) & c)
         y = inv_left_shift(y, s, b)  # inv of y ^ ((y << s) & b)
@@ -105,20 +92,8 @@ def clone_mt19937(out):
 
         state.append(y)
 
-    found = False
-    i = 0
     g = MT19937(0)
-    g.reset_state(state[i:i + n], index=n)
-
-    while i + n < len(out):
-        v = g.extract_number()
-        found = v == out[i + n]
-        if found:
-            g.reset_state(state[i:i + n], index=n)
-            break
-
-        i += 1
-        g.reset_state(state[i:i + n], index=n)
+    g.reset_state(state[:n], index=n)
 
     return g
 
