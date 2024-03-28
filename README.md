@@ -9,6 +9,13 @@ that this building blocks or primitives can help you in your journey.
 Without more, let's put our hands on and break the famous
 [Vigenere cipher](https://en.wikipedia.org/wiki/Vigen%C3%A8re_cipher).
 
+## Install
+
+```
+pip install cryptonita          # lite version
+pip install cryptonita[full]    # full version
+```
+
 ## Tutorial - Break a xor Vigenere cipher
 
 The
