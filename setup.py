@@ -38,24 +38,23 @@ except:
 
     long_description = __doc__
 
-install_deps=[
-        'scipy',
-        'langdetect',
-        'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
-        'z3-solver',
-        'base58',
-        ]
+install_deps = []
 
-optional_deps=[
-        'pycrypto',
-        'aspell-python-py3',    # apt-get install libaspell-dev
-        ]
 
-extra_deps=[
-        'matplotlib',
-        'numpy',
-        'seaborn',
-        ]
+extra_deps = {
+        'full' : [
+            'matplotlib',
+            'numpy',
+            'seaborn',
+            'pycryptodome',
+            'aspell-python-py3',    # apt-get install libaspell-dev
+            'scipy',
+            'langdetect',
+            'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
+            'z3-solver',
+            'base58',
+            ]
+        }
 
 setup(
     name='cryptonita',
@@ -92,7 +91,8 @@ setup(
     # automatically for us
     packages=find_packages(),
     python_requires='>=3.3',
-    install_requires=install_deps + optional_deps,
+    install_requires=install_deps,
+    extras_require=extra_deps,
 
     keywords='crypto cryptography crypto-analysis',
 )

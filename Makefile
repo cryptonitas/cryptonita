@@ -24,7 +24,7 @@ all:
 	@exit 1
 
 deps:
-	pip install -e .
+	pip install -e '.[full]'
 
 deps-dev: deps
 	pip install -r requirements-dev.txt
@@ -51,7 +51,7 @@ dist:
 	rm -Rf build/ *.egg-info
 
 upload: dist
-	twine upload dist/*.tar.gz dist/*.whl
+	twine upload --config-file .pypirc dist/*.tar.gz dist/*.whl
 
 clean_test:
 	@echo
