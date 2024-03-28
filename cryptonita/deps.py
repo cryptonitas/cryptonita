@@ -6,7 +6,7 @@ class _deps_null_module:
         self.dependency = dependency
 
     def __getattr__(self, attr):
-        raise ImportError(
+        raise AttributeError(
             "'{}' not installed. You may install it running 'pip install cryptonita[full]'."
             .format(self.dependency)
         )
