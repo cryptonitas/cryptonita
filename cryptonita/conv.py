@@ -115,7 +115,8 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
         raw = raw.encode(enc, errors='strict')
 
-    elif isinstance(raw, np.ndarray):
+    elif getattr(np, 'ndarray',
+                 None) is not None and isinstance(raw, np.ndarray):
         if len(raw.shape) != 1:
             raise ValueError(
                 "only 1-dimentional arrays are supported but array of shape %s was given"
