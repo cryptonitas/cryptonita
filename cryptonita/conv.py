@@ -397,4 +397,6 @@ B.join = join_bytestrings
 import base64, base58, bisect, struct, itertools
 from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 
-import numpy as np
+from cryptonita.deps import importdep
+
+np = importdep('numpy')

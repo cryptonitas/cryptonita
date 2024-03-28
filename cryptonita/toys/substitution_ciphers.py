@@ -1,6 +1,8 @@
 from cryptonita import B
 import string
-import gmpy2 as gp
+from cryptonita.deps import importdep
+
+gp = importdep('gmpy2')
 '''
 >>> from cryptonita import B                    # byexample: +timeout=10
 >>> from cryptonita.toys.substitution_ciphers import *

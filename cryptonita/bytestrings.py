@@ -2,7 +2,10 @@ from cryptonita.mixins import (
     SequenceMixin, MutableSequenceMixin, ByteStatsMixin, SequenceStatsMixin
 )
 
-import numpy as np
+from cryptonita.deps import importdep
+
+np = importdep('numpy')
+
 from collections.abc import Iterable, Callable
 '''
 >>> from cryptonita import B           # byexample: +timeout=10

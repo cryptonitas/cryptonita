@@ -3,9 +3,11 @@ import math
 import itertools
 from collections import Counter
 
-import scipy.stats as stats
-import numpy as np
-from langdetect import detect_langs
+from cryptonita.deps import importdep
+
+np = importdep('numpy')
+stats = importdep('scipy.stats')
+detect_langs = importdep('language.detect_langs')
 
 from cryptonita import B
 from cryptonita.helpers import are_bytes_or_fail, are_same_length_or_fail

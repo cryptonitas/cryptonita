@@ -1,5 +1,7 @@
-import numpy as np
-import gmpy2 as gp
+from cryptonita.deps import importdep
+
+np = importdep('numpy')
+gp = importdep('gmpy2')
 '''
 >>> import numpy as np
 >>> import gmpy2 as gp

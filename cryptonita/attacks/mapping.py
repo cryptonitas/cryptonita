@@ -1,4 +1,6 @@
-import z3
+from cryptonita.deps import importdep
+
+z3 = importdep('z3')
 
 from cryptonita.helpers import are_same_length_or_fail, are_bytes_or_fail
 '''
