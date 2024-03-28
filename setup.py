@@ -38,7 +38,9 @@ except:
 
     long_description = __doc__
 
-install_deps = []
+install_deps = [
+        'base58',
+    ]
 
 
 extra_deps = {
@@ -52,7 +54,6 @@ extra_deps = {
             'langdetect',
             'gmpy2',       # apt-get install libgmp-dev libmpc-dev libmpfr-dev
             'z3-solver',
-            'base58',
             ]
         }
 
