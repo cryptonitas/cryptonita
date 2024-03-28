@@ -1,6 +1,6 @@
 '''Cryptanalysis swiss army knife'''
 
-__version__ = "0.6.1"
+__version__ = "0.6.2"
 
 _author = 'Di Paola Martin'
 _license = 'GNU GPLv3'
