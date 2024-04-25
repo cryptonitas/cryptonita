@@ -62,20 +62,20 @@ def clone_mt19937(out):
     ''' Clone the internal state of a Mersenne Twister 19937 (MT19937)
         from its output <out>.
 
-        For MT19937 we need 624 sequential numbers at minimum to clone
+        For MT19937 we need 624 sequential numbers to clone
         the state.
 
             >>> from cryptonita.attacks.prng import clone_mt19937
             >>> clone_mt19937([1, 2, 3])           # byexample: +norm-ws
             Traceback <...>
-            ValueError: You need at least 624 numbers to clone the MT19937 PRNG
-                        but you have only 3.
+            ValueError: You need 624 numbers to clone the MT19937 PRNG
+                        but you provided 3.
         '''
 
     n = 624
-    if len(out) < n:
-        raise ValueError(("You need at least %i numbers to clone the MT19937 PRNG" +\
-                          " but you have only %i.") % (n, len(out)))
+    if len(out) != n:
+        raise ValueError(("You need %i numbers to clone the MT19937 PRNG" +\
+                          " but you provided %i.") % (n, len(out)))
 
     u, d = 11, 0xffffffff
     s, b = 7, 0x9d2c5680
