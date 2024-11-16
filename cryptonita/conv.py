@@ -1,6 +1,6 @@
 '''
 >>> from cryptonita.conv import B           # byexample: +timeout=10
->>> from cryptonita.conv import as_bytes, transpose, uniform_length, repack, join_bytestrings
+>>> from cryptonita.conv import as_bytes, transpose, uniform_length, reinterpret, join_bytestrings
 >>> from cryptonita.bytestrings import MutableByteString, ImmutableByteString
 '''
 
@@ -335,7 +335,7 @@ def uniform_length(sequences, *, drop=0, length=None):
     return list(sequences)
 
 
-def repack(iterable, ifmt, ofmt):
+def reinterpret(iterable, ifmt, ofmt):
     ''' Repack each element in <iterable> packing them with <ifmt>
         first and then unpacking them with <ofmt>.
 
@@ -371,17 +371,17 @@ def repack(iterable, ifmt, ofmt):
         Let's see a simple example. Considere the 4 bytes unsigned integer 0xAABBCCDD in big endian.
         If we want to see it as an integer in little endiand we do:
 
-        >>> numbers = list(repack([0xAABBCCDD], ifmt='>I', ofmt='<I'))
+        >>> numbers = list(reinterpret([0xAABBCCDD], ifmt='>I', ofmt='<I'))
         >>> hex(numbers[0])
         '0xddccbbaa'
 
-        repack is not limited to reinterpret one element by another, the mapping
+        reinterpret is not limited to reinterpret one element by another, the mapping
         can be N to M.
 
         For example, let's take the same 0xAABBCCDD number and see it as 2 numbers
         if 2 bytes each, both in the same endianness.
 
-        >>> [hex(n) for n in (repack([0xAABBCCDD], ifmt='>I', ofmt='>2H'))]
+        >>> [hex(n) for n in (reinterpret([0xAABBCCDD], ifmt='>I', ofmt='>2H'))]
         ['0xaabb', '0xccdd']
 
         Here is a more interesting example:
@@ -389,16 +389,16 @@ def repack(iterable, ifmt, ofmt):
         Let's say we want to take a list of 4 bytes numbers in big endian and see it
         as a list of bytes. We could do:
 
-        >>> list(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
+        >>> list(reinterpret([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
         [b'\xaa', b'\xbb', b'\xcc', b'\xdd', b'\xa1', b'\xb2', b'\xc3', b'\xd4']
 
         If you want to see that list of bytes a the Bytes object, just join the
-        result of repack():
+        result of reinterpret():
 
-        >>> B.join(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
+        >>> B.join(reinterpret([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
         '\xaa\xbb\xcc\xdd\xa1\xb2\xc3\xd4'
 
-        repack() is also handy to see raw bytes as something else.
+        reinterpret() is also handy to see raw bytes as something else.
         For example, take the following 8 bytes:
 
         >>> data = B('ABCDAABB')
@@ -406,11 +406,11 @@ def repack(iterable, ifmt, ofmt):
         Now we want to see those 8 bytes as two 4 bytes integers.
         It is tempting to do the following:
 
-        >>> list(repack(data, ifmt='>8s', ofmt='>I'))
+        >>> list(reinterpret(data, ifmt='>8s', ofmt='>I'))
         Traceback <...>
         ValueError: Format sizes mismatch: input >8s (8 bytes), output >I (4 bytes)
 
-        Why does it fail? Well, repack() take each each input element, sees it
+        Why does it fail? Well, reinterpret() take each each input element, sees it
         as ifmt and then reinterprets it as ofmt. While it is chainging the reinterpretation,
         the amount of bytes is the same: the size of ifmt and ofmt must be the same.
 
@@ -418,17 +418,17 @@ def repack(iterable, ifmt, ofmt):
 
         Another try could be:
 
-        >>> list(repack(data, ifmt='>8s', ofmt='>2I'))
+        >>> list(reinterpret(data, ifmt='>8s', ofmt='>2I'))
         Traceback <...>
         struct.error: argument for 's' must be a bytes object
 
-        What?? Well, repack() takes an iterable so it is thinking that 'data'
+        What?? Well, reinterpret() takes an iterable so it is thinking that 'data'
         is a iterable of bytes. But iterating the Bytes object yields integers, no bytes
         hence the error.
 
         A refined (but still incorrect) solution would be:
 
-        >>> [hex(n) for n in repack([data], ifmt='>8s', ofmt='>2I')]
+        >>> [hex(n) for n in reinterpret([data], ifmt='>8s', ofmt='>2I')]
         ['0x41424344', '0x41414242']
 
         Now, that example above *worked* but there is a problem: both ifmt and ofmt
@@ -438,7 +438,7 @@ def repack(iterable, ifmt, ofmt):
         The issue is that the iterable ('[data]') has 1 single element ('data')
         and this 'data' may vary in size.
 
-        This is not a limitation of repack() but a limitation of how we are trying
+        This is not a limitation of reinterpret() but a limitation of how we are trying
         to use it.
 
         If we instead take the 'data' and see it as a list of 4 bytes blocks, now
@@ -446,7 +446,7 @@ def repack(iterable, ifmt, ofmt):
 
         This is what I mean:
 
-        >>> [hex(n) for n in repack(data.nblocks(4), ifmt='>4s', ofmt='>I')]
+        >>> [hex(n) for n in reinterpret(data.nblocks(4), ifmt='>4s', ofmt='>I')]
         ['0x41424344', '0x41414242']
 
         Note that we didn't pass '[data]' (a list of a single element with the entire
@@ -466,6 +466,11 @@ def repack(iterable, ifmt, ofmt):
     for i in iterable:
         for o in struct.unpack(ofmt, struct.pack(ifmt, i)):
             yield o
+
+
+def repack(iterable, ifmt, ofmt):
+    ''' Deprecated, use reinterpret() function instead. '''
+    return reinterpret(iterable, ifmt, ofmt)
 
 
 def join_bytestrings(*seqs):
