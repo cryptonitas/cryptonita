@@ -339,34 +339,122 @@ def repack(iterable, ifmt, ofmt):
     ''' Repack each element in <iterable> packing them with <ifmt>
         first and then unpacking them with <ofmt>.
 
-        See the documentation of the Python standard module struct.
+        See the documentation of the Python standard module 'struct'
+        but as a little recap:
 
-        To repack a list of numbers of 4 bytes into a sequence
-        of bytes in big endian we do:
+        From 'struct' docs:
+
+            ---------------------------------------------------------------------
+            The optional first format char indicates byte order, size and alignment:
+              @: native order, size & alignment (default)
+              =: native order, std. size & alignment
+              <: little-endian, std. size & alignment
+              >: big-endian, std. size & alignment
+              !: same as >
+
+            The remaining chars indicate types of args and must match exactly;
+            these can be preceded by a decimal repeat count:
+              x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;
+              ?: _Bool (requires C99; if not available, char is used instead)
+              h:short; H:unsigned short; i:int; I:unsigned int;
+              l:long; L:unsigned long; f:float; d:double; e:half-float.
+            Special cases (preceding decimal count indicates length):
+              s:string (array of char); p: pascal string (with count byte).
+            Special cases (only available in native format):
+              n:ssize_t; N:size_t;
+              P:an integer type that is wide enough to hold a pointer.
+            Special case (not in native mode unless 'long long' in platform C):
+              q:long long; Q:unsigned long long
+            Whitespace between formats is ignored.
+            ---------------------------------------------------------------------
+
+        Let's see a simple example. Considere the 4 bytes unsigned integer 0xAABBCCDD in big endian.
+        If we want to see it as an integer in little endiand we do:
+
+        >>> numbers = list(repack([0xAABBCCDD], ifmt='>I', ofmt='<I'))
+        >>> hex(numbers[0])
+        '0xddccbbaa'
+
+        repack is not limited to reinterpret one element by another, the mapping
+        can be N to M.
+
+        For example, let's take the same 0xAABBCCDD number and see it as 2 numbers
+        if 2 bytes each, both in the same endianness.
+
+        >>> [hex(n) for n in (repack([0xAABBCCDD], ifmt='>I', ofmt='>2H'))]
+        ['0xaabb', '0xccdd']
+
+        Here is a more interesting example:
+
+        Let's say we want to take a list of 4 bytes numbers in big endian and see it
+        as a list of bytes. We could do:
 
         >>> list(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
         [b'\xaa', b'\xbb', b'\xcc', b'\xdd', b'\xa1', b'\xb2', b'\xc3', b'\xd4']
 
-        To get a single Bytes object you could do:
+        If you want to see that list of bytes a the Bytes object, just join the
+        result of repack():
 
         >>> B.join(repack([0xAABBCCDD, 0xA1B2C3D4], ifmt='>I', ofmt='>1s1s1s1s'))
         '\xaa\xbb\xcc\xdd\xa1\xb2\xc3\xd4'
 
-        And from bytes to integers:
+        repack() is also handy to see raw bytes as something else.
+        For example, take the following 8 bytes:
 
-        >>> a, b = list(repack(B('ABCDAABB').nblocks(4), ifmt='>4s', ofmt='>I'))
-        >>> hex(a), hex(b)
-        ('0x41424344', '0x41414242')
+        >>> data = B('ABCDAABB')
 
-        Any input/output formats are valid as long as they have the same
-        'size':
+        Now we want to see those 8 bytes as two 4 bytes integers.
+        It is tempting to do the following:
 
-        >>> list(repack([1], ifmt='>I', ofmt='>H'))
+        >>> list(repack(data, ifmt='>8s', ofmt='>I'))
         Traceback <...>
-        ValueError: Format sizes mismatch: input >I (4 bytes), output >H (2 bytes)
+        ValueError: Format sizes mismatch: input >8s (8 bytes), output >I (4 bytes)
 
+        Why does it fail? Well, repack() take each each input element, sees it
+        as ifmt and then reinterprets it as ofmt. While it is chainging the reinterpretation,
+        the amount of bytes is the same: the size of ifmt and ofmt must be the same.
 
+        Here, '>8s' (8 bytes) and '>I' (4 bytes) are obiously incorrect.
+
+        Another try could be:
+
+        >>> list(repack(data, ifmt='>8s', ofmt='>2I'))
+        Traceback <...>
+        struct.error: argument for 's' must be a bytes object
+
+        What?? Well, repack() takes an iterable so it is thinking that 'data'
+        is a iterable of bytes. But iterating the Bytes object yields integers, no bytes
+        hence the error.
+
+        A refined (but still incorrect) solution would be:
+
+        >>> [hex(n) for n in repack([data], ifmt='>8s', ofmt='>2I')]
+        ['0x41424344', '0x41414242']
+
+        Now, that example above *worked* but there is a problem: both ifmt and ofmt
+        are tighted to the size of data. For example if data is 16 bytes, we would
+        have to change ifmt to '>16s' and ofmt to '>4I'.
+
+        The issue is that the iterable ('[data]') has 1 single element ('data')
+        and this 'data' may vary in size.
+
+        This is not a limitation of repack() but a limitation of how we are trying
+        to use it.
+
+        If we instead take the 'data' and see it as a list of 4 bytes blocks, now
+        each input element has the same fixed size: 4 bytes.
+
+        This is what I mean:
+
+        >>> [hex(n) for n in repack(data.nblocks(4), ifmt='>4s', ofmt='>I')]
+        ['0x41424344', '0x41414242']
+
+        Note that we didn't pass '[data]' (a list of a single element with the entire
+        Bytes object) but instead we passed blocks of 4 bytes.
+        In that way, it doesn't matter if data is 8, 16 or N bytes, nblocks() returns
+        a list of elements of 4 bytes each so ifmt and ofmt don't need to be adjusted.
         '''
+
     isize = struct.calcsize(ifmt)
     osize = struct.calcsize(ofmt)
     if isize != osize:
