@@ -1,6 +1,6 @@
 import math
 '''
->>> from cryptonita.stats.approximated_quantile import ApproximatedQuantile
+>>> from cryptonita.stats.distribution_summary import DistributionSummary
 '''
 
 
@@ -27,10 +27,10 @@ class _T:
         return iter((self.v, self.g, self.d))
 
 
-class ApproximatedQuantile:
+class DistributionSummary:
     '''
     Implements an e-approximated q-quantile summary based on the work
-    of Greenwald and Khanna ([GK01]).
+    of Greenwald and Khanna ([GK01], [GK04]).
     Taken some extra ideas from Luo at et ([LWYC]).
 
     [GK01] Space-Efficient Online Computation of Quantile Summaries,
@@ -193,7 +193,7 @@ class ApproximatedQuantile:
         from the requested ranks.
 
         >>> I = [26, 45, 12, 13, 89, 14, 24, 55, 98]
-        >>> gk = ApproximatedQuantile(0.1)
+        >>> gk = DistributionSummary(0.1)
 
         >>> gk.add_observations(I)
         >>> gk.rank(1)
@@ -309,6 +309,12 @@ class ApproximatedQuantile:
 
         # The list contains the answers in the same order than the ranks requested.
         return ans
+
+    @classmethod
+    def combine(cls, summary_a, summary_b):
+        # Combine 2 Summaries
+        # [GK04] Power conserving computation of order-statistics over sensor networks
+        raise NotImplemented("Not supported yet")
 
     def summary_dump(self):
         self._flush()

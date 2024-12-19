@@ -1,5 +1,5 @@
 from cryptonita import B
-from cryptonita.stats.approximated_quantile import ApproximatedQuantile
+from cryptonita.stats.distribution_summary import DistributionSummary
 
 import random, math, itertools
 import tqdm
@@ -36,7 +36,7 @@ for input_sz in INPUT_SET_SIZES:
         for e in EPSILONS:
             for buffered in BUFFERED:
                 max_buffer_len = 1024**2 if buffered else 0
-                gk = ApproximatedQuantile(e, max_buffer_len=max_buffer_len, check_invariants=True)
+                gk = DistributionSummary(e, max_buffer_len=max_buffer_len, check_invariants=True)
 
                 gk.add_observations(I)
 
