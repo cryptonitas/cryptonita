@@ -115,12 +115,11 @@ def as_bytes(raw, encoding='ascii', mutable=False):
 
         raw = raw.encode(enc, errors='strict')
 
-    elif getattr(np, 'ndarray',
-                 None) is not None and isinstance(raw, np.ndarray):
+    elif getattr(np, 'ndarray', None) is not None and isinstance(raw, np.ndarray):
         if len(raw.shape) != 1:
             raise ValueError(
-                "only 1-dimentional arrays are supported but array of shape %s was given"
-                % str(raw.shape)
+                "only 1-dimentional arrays are supported but array of shape %s was given" %
+                str(raw.shape)
             )
         raw = list(raw)
 
@@ -134,9 +133,7 @@ def as_bytes(raw, encoding='ascii', mutable=False):
         raw = raw.replace(b' ', b'')
         if (encoding == 'upper' and not raw.isupper()) or \
                 (encoding == 'lower' and not raw.islower()):
-            raise ValueError(
-                "text must contain %scase plus spaces only." % encoding
-            )
+            raise ValueError("text must contain %scase plus spaces only." % encoding)
 
         offset = ord('A') if encoding == 'upper' else ord('a')
         raw = bytes(r - offset for r in raw)
@@ -300,8 +297,7 @@ def uniform_length(sequences, *, drop=0, length=None):
 
     if length is not None:
         return [
-            seq[:length] if len(seq) != length else seq for seq in sequences
-            if len(seq) >= length
+            seq[:length] if len(seq) != length else seq for seq in sequences if len(seq) >= length
         ]
 
     sequences, original_idxs = zip(
@@ -328,9 +324,7 @@ def uniform_length(sequences, *, drop=0, length=None):
     sequences = sequences[ilow:]
 
     # restore the original order
-    sequences, _ = zip(
-        *sorted(zip(sequences, original_idxs), key=lambda seq_idx: seq_idx[1])
-    )
+    sequences, _ = zip(*sorted(zip(sequences, original_idxs), key=lambda seq_idx: seq_idx[1]))
 
     return list(sequences)
 
